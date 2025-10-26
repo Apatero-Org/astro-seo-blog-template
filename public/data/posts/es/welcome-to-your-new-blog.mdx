@@ -1,0 +1,147 @@
+---
+title: "Bienvenido a tu nuevo blog de Astro"
+description: "Comienza con tu nueva plantilla de blog SEO de Astro. Aprende cómo crear publicaciones, personalizar tu blog y hacerlo tuyo."
+publishDate: 2025-10-30T09:01:25.159Z
+updateDate: 2025-10-30T09:01:25.161Z
+author: "kevin"
+category: "getting-started"
+tags: ["astro","tutorial","getting-started"]
+featured: true
+draft: false
+heroImage: "/blog-images/1761814882054-4raehv.png"
+seoTitle: "Bienvenido a tu nuevo blog de Astro"
+seoDescription: "Comienza con tu nueva plantilla de blog SEO de Astro. Aprende cómo crear publicaciones, personalizar tu blog y hacerlo tuyo."
+seoKeywords: ""
+noindex: false
+nofollow: false
+canonicalUrl: ""
+ogTitle: "Bienvenido a tu nuevo blog de Astro"
+ogDescription: "Comienza con tu nueva plantilla de blog SEO de Astro. Aprende cómo crear publicaciones, personalizar tu blog y hacerlo tuyo."
+ogImage: "/blog-images/1761814882054-4raehv.png"
+---
+
+# ¡Bienvenido a tu nuevo blog!
+
+¡Felicitaciones por configurar tu nueva plantilla de blog SEO de Astro! Esta publicación de ejemplo te ayudará a comprender cómo crear y estructurar tus propias publicaciones de blog.
+
+## ¿Qué es esta plantilla?
+
+Esta es una plantilla de blog moderna y repleta de funciones construida con Astro. Incluye:
+
+- **Optimización SEO**: Mejores prácticas integradas para motores de búsqueda
+- **Modo oscuro**: Cambio automático de tema
+- **Soporte multiidioma**: Listo para internacionalización
+- **Rendimiento rápido**: Cargas de página ultrarrápidas
+- **Personalización fácil**: Configuración y estilo simples
+
+## Crear tu primera publicación
+
+Las publicaciones del blog se escriben en formato MDX, que te permite usar tanto Markdown como componentes React. Crea un nuevo archivo en `public/data/posts/` con la extensión `.mdx`.
+
+### Frontmatter
+
+Cada publicación comienza con frontmatter (la sección entre los marcadores `---`) que define los metadatos:
+
+```yaml
+---
+title: "Tu título de publicación"
+description: "Una breve descripción"
+pubDate: "2025-01-15"
+author: "Tu nombre"
+category: "tecnología"
+tags: ["astro", "desarrollo-web"]
+image: "/blog-images/your-image.jpg"
+featured: false
+---
+```
+
+### Escribir contenido
+
+Después del frontmatter, escribe tu contenido usando Markdown:
+
+- **Texto en negrita** con `**text**`
+- *Texto en cursiva* con `*text*`
+- [Enlaces](https://astro.build) con `[text](url)`
+- Bloques de código con triple comilla invertida
+
+### Ejemplos de código
+
+Puedes incluir código con resaltado de sintaxis:
+
+```javascript
+function greet(name) {
+  console.log(`¡Hola, ${name}!`);
+}
+
+greet("Mundo");
+```
+
+```python
+def greet(name):
+    print(f"¡Hola, {name}!")
+
+greet("Mundo")
+```
+
+## Organizar tu contenido
+
+### Categorías
+
+Organiza las publicaciones por categoría. Define las categorías en `public/data/categories/`.
+
+### Etiquetas
+
+Agrega múltiples etiquetas a cada publicación para una mejor capacidad de descubrimiento. Define las etiquetas en `public/data/tags/`.
+
+### Imágenes
+
+Almacena las imágenes en `public/blog-images/` y referéncialas en tus publicaciones:
+
+```markdown
+![Texto alternativo](/blog-images/your-image.jpg)
+```
+
+## Personalizar tu blog
+
+### Configuración del sitio
+
+Edita `public/data/settings/site-config.json` para personalizar:
+
+- Título y descripción del sitio
+- Información del autor
+- Enlaces de redes sociales
+- Elementos de navegación
+- Funciones (modo oscuro, búsqueda, RSS)
+- Seguimiento de analíticas
+
+### Estilo
+
+La plantilla usa Tailwind CSS. Personaliza colores, fuentes y estilos en `tailwind.config.mjs`.
+
+### Componentes
+
+Crea componentes personalizados en `src/components/` y úsalos en tus publicaciones MDX.
+
+## Próximos pasos
+
+1. **Elimina esta publicación de ejemplo** una vez que estés listo
+2. **Crea tu primera publicación real** en `public/data/posts/`
+3. **Personaliza la configuración del sitio** con tu información
+4. **Agrega tu marca** (logo, colores, fuentes)
+5. **Despliega tu blog** en tu plataforma de alojamiento favorita
+
+## ¿Necesitas ayuda?
+
+- Lee el [README completo](https://github.com/Apatero-Org/astro-seo-blog-template)
+- Consulta la [documentación de Astro](https://docs.astro.build)
+- Navega por la [documentación de MDX](https://mdxjs.com)
+
+## Conclusión
+
+¡Estás listo para comenzar a bloguear! Esta plantilla proporciona todo lo que necesitas para un blog profesional. Concéntrate en crear contenido excelente y deja que la plantilla maneje los detalles técnicos.
+
+¡Feliz escritura!
+
+---
+
+*Esta es una publicación de ejemplo. Siéntete libre de eliminarla y crear tu propio contenido.*

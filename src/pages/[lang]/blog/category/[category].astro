@@ -1,0 +1,345 @@
+---
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import { sortPostsByDate, formatDate } from '../../../../lib/utils';
+import { SITE_CONFIG } from '../../../../data/site-config';
+import { getCategories } from '../../../../lib/data';
+import { getPublishedBlogPosts } from '../../../../lib/posts';
+import { SUPPORTED_LANGUAGES, DEFAULT_LANGUAGE, isValidLanguage, getLanguagePrefix } from '../../../../config/languages';
+import { Image } from 'astro:assets';
+
+// Enable prerendering for this page
+export const prerender = true;
+
+// Static paths for all categories in all languages
+export async function getStaticPaths() {
+  const paths = [];
+  const categoriesData = await getCategories();
+
+  // Get all supported languages except default (English)
+  const languages = SUPPORTED_LANGUAGES.filter(lang => lang !== DEFAULT_LANGUAGE);
+
+  for (const lang of languages) {
+    const publishedPosts = await getPublishedBlogPosts(lang);
+
+    for (const cat of categoriesData) {
+      // Only create page if this category has posts in this language
+      const postsInCategory = publishedPosts.filter(
+        post => post.data.category.toLowerCase() === cat.name.toLowerCase()
+      );
+
+      if (postsInCategory.length > 0) {
+        paths.push({
+          params: {
+            lang,
+            category: cat.name.toLowerCase()
+          }
+        });
+      }
+    }
+  }
+
+  return paths;
+}
+
+// Get the language and category from URL
+const { lang, category } = Astro.params;
+
+// Validate language
+if (!isValidLanguage(lang)) {
+  return new Response(null, {
+    status: 404,
+    statusText: 'Language not supported'
+  });
+}
+
+// Get all posts for this category and language
+const publishedPosts = await getPublishedBlogPosts(lang);
+const allPosts = publishedPosts.filter(post =>
+  post.data.category.toLowerCase() === category?.toLowerCase()
+);
+
+const sortedPosts = sortPostsByDate(allPosts);
+
+// Get all categories from JSON file
+const categoriesData = await getCategories();
+const categories = categoriesData.map(cat => cat.name);
+const allBlogPosts = await getPublishedBlogPosts(lang);
+
+// Format category name for display
+const categoryDisplay = categories.find(c => c.toLowerCase() === category?.toLowerCase()) || category;
+
+const languagePrefix = getLanguagePrefix(lang);
+
+// Translations for UI elements
+const translations = {
+  es: {
+    articles: "Artículos",
+    article: "Artículo",
+    articlesInCategory: "artículo(s) en esta categoría",
+    category: "Categoría",
+    backToAllBlogs: "Volver a Todos los Blogs",
+    allCategories: "Todas las Categorías",
+    categoryStats: "Estadísticas de Categoría",
+    totalArticles: "Artículos Totales",
+    latestPost: "Última Publicación",
+    readMore: "Leer más →",
+    featured: "DESTACADO",
+    noArticles: "No se encontraron artículos en esta categoría."
+  },
+  fr: {
+    articles: "Articles",
+    article: "Article",
+    articlesInCategory: "article(s) dans cette catégorie",
+    category: "Catégorie",
+    backToAllBlogs: "Retour à Tous les Blogs",
+    allCategories: "Toutes les Catégories",
+    categoryStats: "Statistiques de Catégorie",
+    totalArticles: "Total des Articles",
+    latestPost: "Dernière Publication",
+    readMore: "Lire la suite →",
+    featured: "EN VEDETTE",
+    noArticles: "Aucun article trouvé dans cette catégorie."
+  },
+  de: {
+    articles: "Artikel",
+    article: "Artikel",
+    articlesInCategory: "Artikel in dieser Kategorie",
+    category: "Kategorie",
+    backToAllBlogs: "Zurück zu Allen Blogs",
+    allCategories: "Alle Kategorien",
+    categoryStats: "Kategoriestatistiken",
+    totalArticles: "Artikel Gesamt",
+    latestPost: "Neuester Beitrag",
+    readMore: "Weiterlesen →",
+    featured: "EMPFOHLEN",
+    noArticles: "Keine Artikel in dieser Kategorie gefunden."
+  },
+  ja: {
+    articles: "記事",
+    article: "記事",
+    articlesInCategory: "件の記事がこのカテゴリにあります",
+    category: "カテゴリ",
+    backToAllBlogs: "すべてのブログに戻る",
+    allCategories: "すべてのカテゴリ",
+    categoryStats: "カテゴリ統計",
+    totalArticles: "記事総数",
+    latestPost: "最新記事",
+    readMore: "続きを読む →",
+    featured: "注目",
+    noArticles: "このカテゴリに記事が見つかりません。"
+  },
+  ko: {
+    articles: "기사",
+    article: "기사",
+    articlesInCategory: "개 기사가 이 카테고리에 있습니다",
+    category: "카테고리",
+    backToAllBlogs: "모든 블로그로 돌아가기",
+    allCategories: "모든 카테고리",
+    categoryStats: "카테고리 통계",
+    totalArticles: "총 기사 수",
+    latestPost: "최신 게시물",
+    readMore: "더 읽기 →",
+    featured: "추천",
+    noArticles: "이 카테고리에 기사가 없습니다."
+  },
+  zh: {
+    articles: "文章",
+    article: "文章",
+    articlesInCategory: "篇文章在此分类中",
+    category: "分类",
+    backToAllBlogs: "返回所有博客",
+    allCategories: "所有分类",
+    categoryStats: "分类统计",
+    totalArticles: "文章总数",
+    latestPost: "最新文章",
+    readMore: "阅读更多 →",
+    featured: "精选",
+    noArticles: "此分类中未找到文章。"
+  }
+};
+
+const t = translations[lang] || {
+  articles: "Articles",
+  article: "Article",
+  articlesInCategory: "article(s) in this category",
+  category: "Category",
+  backToAllBlogs: "Back to All Blogs",
+  allCategories: "All Categories",
+  categoryStats: "Category Stats",
+  totalArticles: "Total Articles",
+  latestPost: "Latest Post",
+  readMore: "Read more →",
+  featured: "FEATURED",
+  noArticles: "No articles found in this category."
+};
+---
+
+<BaseLayout
+  title={`${categoryDisplay} ${t.articles} - ${SITE_CONFIG.title}`}
+  description={`Browse all ${categoryDisplay} articles on ${SITE_CONFIG.title}`}
+  siteName={SITE_CONFIG.title}
+  currentLanguage={lang}
+  pageType="blog-category"
+  pageIdentifier={category}
+  breadcrumb={[
+    { name: 'Blog', url: `${languagePrefix}/blog` },
+    { name: 'Category', url: `${languagePrefix}/blog` },
+    { name: categoryDisplay, url: `${languagePrefix}/blog/category/${category}` }
+  ]}
+>
+  <div class="container py-12">
+    <div class="grid lg:grid-cols-[1fr,320px] gap-12">
+      <!-- Main Content -->
+      <div>
+        <!-- Header -->
+        <div class="mb-8">
+          <div class="flex items-center gap-3 mb-4">
+            <a href={`${languagePrefix}/blog`} class="text-text-muted hover:text-text transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+              </svg>
+            </a>
+            <span class="text-text-muted">/</span>
+            <span class="text-text-muted">{t.category}</span>
+            <span class="text-text-muted">/</span>
+            <span class="font-medium">{categoryDisplay}</span>
+          </div>
+          <h1 class="text-3xl font-display font-bold mb-2">
+            {categoryDisplay} {t.articles}
+          </h1>
+          <p class="text-text-muted">
+            {sortedPosts.length} {sortedPosts.length === 1 ? t.article : t.articlesInCategory}
+          </p>
+        </div>
+
+        <!-- Posts List -->
+        {sortedPosts.length > 0 ? (
+          <div class="space-y-8">
+            {sortedPosts.map((post) => (
+              <article class="border-b pb-8">
+                <a href={`${languagePrefix}/blog/${post.slug}`} class="block group">
+                  <div class="flex gap-6">
+                    {/* Thumbnail */}
+                    {post.data.heroImage && (
+                      <div class="w-48 h-32 flex-shrink-0 overflow-hidden rounded-lg">
+                        <Image
+                          src={post.data.heroImage}
+                          alt={post.data.heroImageAlt || `${post.data.title} - ${categoryDisplay} category tutorial`}
+                          width={768}
+                          height={512}
+                          class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          loading="lazy"
+                          format="webp"
+                          quality={85}
+                        />
+                      </div>
+                    )}
+
+                    {/* Content */}
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center gap-2 text-xs text-text-muted mb-3">
+                        <span>{formatDate(post.data.publishDate)}</span>
+                        {post.data.featured && (
+                          <>
+                            <span>•</span>
+                            <span class="px-2 py-0.5 bg-text text-background text-xs rounded">{t.featured}</span>
+                          </>
+                        )}
+                      </div>
+
+                      <h3 class="text-xl font-semibold mb-2 group-hover:opacity-70 transition-opacity">
+                        {post.data.title}
+                      </h3>
+
+                      <p class="text-sm text-text-muted mb-3 line-clamp-2">
+                        {post.data.description}
+                      </p>
+
+                      <div class="flex items-center justify-between">
+                        <div class="flex flex-wrap gap-2">
+                          {(post.data.tags || []).slice(0, 3).map((tag) => (
+                            <span class="text-xs text-text-muted">
+                              #{tag}
+                            </span>
+                          ))}
+                        </div>
+                        <span class="text-sm text-text-muted group-hover:text-text transition-colors">
+                          {t.readMore}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </a>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div class="text-center py-12 border border-border rounded-lg">
+            <p class="text-text-muted mb-4">{t.noArticles}</p>
+            <a href={`${languagePrefix}/blog`} class="inline-flex items-center gap-2 px-4 py-2 border border-border rounded-full hover:bg-surface transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+              </svg>
+              {t.backToAllBlogs}
+            </a>
+          </div>
+        )}
+      </div>
+
+      <!-- Sidebar -->
+      <aside class="space-y-8 lg:sticky lg:top-8 lg:h-fit">
+        <!-- Back to Home -->
+        <div>
+          <a href={`${languagePrefix}/blog`} class="inline-flex items-center gap-2 px-4 py-2 border border-border rounded-full text-text hover:bg-text hover:text-background transition-all text-sm font-medium w-full justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            {t.backToAllBlogs}
+          </a>
+        </div>
+
+        <!-- All Categories -->
+        <div>
+          <h3 class="text-sm font-bold uppercase mb-4">{t.allCategories}</h3>
+          <div class="space-y-2">
+            {categories.map((cat) => {
+              const count = allBlogPosts.filter(p => p.data.category === cat).length;
+              const isActive = cat.toLowerCase() === category?.toLowerCase();
+              return (
+                <a
+                  href={`${languagePrefix}/blog/category/${cat.toLowerCase()}`}
+                  class={`flex items-center justify-between py-2 px-3 border border-border rounded-full transition-colors ${
+                    isActive ? 'bg-text text-background' : 'hover:bg-surface'
+                  }`}
+                >
+                  <span class="text-sm">{cat}</span>
+                  <span class="text-xs">{count}</span>
+                </a>
+              );
+            })}
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="border-t pt-8">
+          <h3 class="text-sm font-bold uppercase mb-4">{t.categoryStats}</h3>
+          <div class="space-y-3">
+            <div class="flex justify-between">
+              <span class="text-sm text-text-muted">{t.totalArticles}</span>
+              <span class="text-sm font-medium">{sortedPosts.length}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-sm text-text-muted">{t.latestPost}</span>
+              <span class="text-sm font-medium">
+                {sortedPosts[0] ? formatDate(sortedPosts[0].data.publishDate) : 'N/A'}
+              </span>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</BaseLayout>

@@ -1,0 +1,341 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { sortPostsByDate, formatDate } from '../../lib/utils';
+import { SITE_CONFIG } from '../../data/site-config';
+import { getPublishedBlogPosts } from '../../lib/posts';
+import BlogSidebar from '../../components/blog/BlogSidebar.astro';
+import fs from 'fs/promises';
+import path from 'path';
+
+// Enable prerendering for this page
+export const prerender = true;
+
+// Static paths for all authors
+export async function getStaticPaths() {
+  const publishedPosts = await getPublishedBlogPosts();
+  const authors = [...new Set(publishedPosts.map(post => post.data.author).filter(Boolean))];
+  
+  // Also include authors from authors.json even if they don't have posts
+  try {
+    const authorsPath = path.join(process.cwd(), 'public', 'data', 'authors', 'authors.json');
+    const authorsData = JSON.parse(await fs.readFile(authorsPath, 'utf-8'));
+    const authorIds = authorsData.authors.map(a => a.id);
+    authors.push(...authorIds);
+  } catch (e) {
+    console.error('Error loading authors for static paths:', e);
+  }
+  
+  const uniqueAuthors = [...new Set(authors)];
+  return uniqueAuthors.map(author => ({
+    params: { author: author.toLowerCase() }
+  }));
+}
+
+const { author } = Astro.params;
+
+// Load author data from JSON file
+let authorInfo = null;
+try {
+  const authorsPath = path.join(process.cwd(), 'public', 'data', 'authors', 'authors.json');
+  const authorsData = JSON.parse(await fs.readFile(authorsPath, 'utf-8'));
+  authorInfo = authorsData.authors.find(a => a.id === author) || null;
+} catch (e) {
+  console.error('Error loading author:', e);
+}
+
+// Get all posts by this author
+const publishedPosts = await getPublishedBlogPosts();
+const authorPosts = publishedPosts.filter(post => 
+  post.data.author?.toLowerCase() === author?.toLowerCase()
+);
+
+const sortedPosts = sortPostsByDate(authorPosts);
+
+// If author doesn't exist and has no posts, redirect to 404 page
+if (!authorInfo && sortedPosts.length === 0) {
+  return Astro.redirect('/404', 302);
+}
+
+// Use real author data or fallback
+const authorDisplay = authorInfo?.name || (author ? author.charAt(0).toUpperCase() + author.slice(1).replace('-', ' ') : '');
+const authorBio = authorInfo?.bio || `Content contributor at ${SITE_CONFIG.title}, sharing insights on technology and development.`;
+const authorEmail = authorInfo?.email || '';
+
+// Calculate author stats
+const totalPosts = sortedPosts.length;
+const latestPost = sortedPosts[0];
+const categories = [...new Set(sortedPosts.map(post => post.data.category))];
+const tags = [...new Set(sortedPosts.flatMap(post => post.data.tags))];
+
+// Breadcrumb for SEO
+const breadcrumb = [
+  { name: 'Home', url: '/' },
+  { name: 'Authors', url: '/author' },
+  { name: authorDisplay, url: `/author/${author}` }
+];
+---
+
+<BaseLayout
+  title={`${authorDisplay} - Author at ${SITE_CONFIG.title}`}
+  description={`Browse all articles by ${authorDisplay}. ${totalPosts} published articles covering ${categories.join(', ')}.`}
+  breadcrumb={breadcrumb}
+>
+  <div class="container py-12">
+    <div class="grid lg:grid-cols-[1fr,320px] gap-12">
+      <!-- Main Content -->
+      <div>
+        <!-- Author Header -->
+        <div class="mb-12">
+          <div class="flex items-center gap-3 mb-6">
+            <a href="/blog" class="text-text-muted hover:text-text transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+              </svg>
+            </a>
+            <span class="text-text-muted">/</span>
+            <span class="text-text-muted">Author</span>
+            <span class="text-text-muted">/</span>
+            <span class="font-medium">{authorDisplay}</span>
+          </div>
+
+          <!-- Author Profile -->
+          <div class="border border-border rounded-lg p-8">
+            <div class="flex flex-col md:flex-row gap-6 items-start">
+              <!-- Avatar -->
+              {authorInfo?.avatar ? (
+                <img 
+                  src={authorInfo.avatar} 
+                  alt={authorDisplay}
+                  class="w-24 h-24 rounded-full object-cover flex-shrink-0"
+                />
+              ) : (
+                <div class="w-24 h-24 bg-text text-background rounded-full flex items-center justify-center text-2xl font-bold flex-shrink-0">
+                  {authorDisplay.split(' ').map(name => name.charAt(0)).join('').slice(0, 2)}
+                </div>
+              )}
+              
+              <!-- Author Info -->
+              <div class="flex-1">
+                <h1 class="text-3xl font-bold mb-3">{authorDisplay}</h1>
+                <p class="text-text-muted mb-4">{authorBio}</p>
+                
+                <!-- Author Stats -->
+                <div class="flex flex-wrap gap-6 text-sm mb-4">
+                  <div class="flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                    <span class="font-medium">{totalPosts}</span>
+                    <span class="text-text-muted">{totalPosts === 1 ? 'Article' : 'Articles'}</span>
+                  </div>
+                  
+                  <div class="flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                      <line x1="16" y1="2" x2="16" y2="6"></line>
+                      <line x1="8" y1="2" x2="8" y2="6"></line>
+                      <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    <span class="text-text-muted">Latest:</span>
+                    <span class="font-medium">{latestPost ? formatDate(latestPost.data.publishDate) : 'N/A'}</span>
+                  </div>
+                  
+                </div>
+                
+                <!-- Social Links -->
+                {authorInfo?.social && (
+                  <div class="flex gap-3">
+                    {authorInfo.social.github && (
+                      <a 
+                        href={`https://github.com/${authorInfo.social.github}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="p-2 hover:bg-surface rounded-lg transition-colors"
+                        aria-label="GitHub"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+                        </svg>
+                      </a>
+                    )}
+                    {authorInfo.social.linkedin && (
+                      <a 
+                        href={authorInfo.social.linkedin}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="p-2 hover:bg-surface rounded-lg transition-colors"
+                        aria-label="LinkedIn"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
+                          <rect x="2" y="9" width="4" height="12"></rect>
+                          <circle cx="4" cy="4" r="2"></circle>
+                        </svg>
+                      </a>
+                    )}
+                    {authorInfo.social.youtube && (
+                      <a 
+                        href={authorInfo.social.youtube}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="p-2 hover:bg-surface rounded-lg transition-colors"
+                        aria-label="YouTube"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"></path>
+                          <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon>
+                        </svg>
+                      </a>
+                    )}
+                    {authorInfo.social.website && (
+                      <a 
+                        href={authorInfo.social.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="p-2 hover:bg-surface rounded-lg transition-colors"
+                        aria-label="Website"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <circle cx="12" cy="12" r="10"></circle>
+                          <line x1="2" y1="12" x2="22" y2="12"></line>
+                          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                        </svg>
+                      </a>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Posts List -->
+        {sortedPosts.length > 0 ? (
+          <div class="space-y-8">
+            <h2 class="text-2xl font-bold mb-6">All Articles by {authorDisplay}</h2>
+            {sortedPosts.map((post) => (
+              <article class="border-b pb-8">
+                <a href={`/blog/${post.slug}`} class="block group">
+                  <div class="flex gap-6">
+                    {/* Thumbnail */}
+                    {post.data.heroImage && (
+                      <div class="w-48 h-32 flex-shrink-0 overflow-hidden rounded-lg">
+                        <img 
+                          src={post.data.heroImage} 
+                          alt={post.data.heroImageAlt || `${post.data.title} by ${authorDisplay} - ${post.data.category} tutorial`}
+                          class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          loading="lazy"
+                        />
+                      </div>
+                    )}
+                    
+                    {/* Content */}
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center gap-2 text-xs text-text-muted mb-3">
+                        <span>{formatDate(post.data.publishDate)}</span>
+                        <span>•</span>
+                        <span class="px-2 py-0.5 bg-border rounded text-xs">{post.data.category}</span>
+                        {post.data.featured && (
+                          <>
+                            <span>•</span>
+                            <span class="px-2 py-0.5 bg-text text-background text-xs rounded">FEATURED</span>
+                          </>
+                        )}
+                      </div>
+                      
+                      <h3 class="text-xl font-semibold mb-2 group-hover:opacity-70 transition-opacity">
+                        {post.data.title}
+                      </h3>
+                      
+                      <p class="text-sm text-text-muted mb-3 line-clamp-2">
+                        {post.data.description}
+                      </p>
+                      
+                      <div class="flex items-center justify-between">
+                        <div class="flex flex-wrap gap-2">
+                          {(post.data.tags || []).slice(0, 4).map((tag) => (
+                            <span class="text-xs text-text-muted">
+                              #{tag}
+                            </span>
+                          ))}
+                        </div>
+                        <span class="text-sm text-text-muted group-hover:text-text transition-colors">
+                          Read more →
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </a>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div class="text-center py-12 border border-border rounded-lg">
+            <p class="text-text-muted mb-4">No articles found for this author.</p>
+            <a href="/blog" class="inline-flex items-center gap-2 px-4 py-2 border border-border rounded-full hover:bg-surface transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+              </svg>
+              Back to All Blogs
+            </a>
+          </div>
+        )}
+      </div>
+
+      <!-- Sidebar -->
+      <BlogSidebar />
+    </div>
+  </div>
+
+  <!-- Person Schema for Author -->
+  {authorInfo && (
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Person",
+        "name": "${authorInfo.name}",
+        "email": "${authorInfo.email}",
+        "description": "${authorBio}",
+        "url": "${SITE_CONFIG.url}/author/${author}",
+        "image": "${authorInfo.avatar ? SITE_CONFIG.url + authorInfo.avatar : ''}",
+        "jobTitle": "Content Creator and AI Expert",
+        "worksFor": {
+          "@type": "Organization",
+          "name": "${SITE_CONFIG.title}",
+          "url": "${SITE_CONFIG.url}"
+        },
+        "knowsAbout": [
+          ${categories.map(cat => `"${cat}"`).join(', ')},
+          ${tags.slice(0, 10).map(tag => `"${tag}"`).join(', ')}
+        ],
+        "mainEntityOfPage": "${SITE_CONFIG.url}/author/${author}",
+        "sameAs": [
+          ${authorInfo.social?.github ? `"https://github.com/${authorInfo.social.github}",` : ''}
+          ${authorInfo.social?.linkedin ? `"${authorInfo.social.linkedin}",` : ''}
+          ${authorInfo.social?.youtube ? `"${authorInfo.social.youtube}",` : ''}
+          ${authorInfo.social?.website ? `"${authorInfo.social.website}"` : ''}
+        ].filter(Boolean),
+        "author": [
+          ${sortedPosts.slice(0, 10).map(post => `{
+            "@type": "Article",
+            "name": "${post.data.title}",
+            "url": "${SITE_CONFIG.url}/blog/${post.slug}",
+            "datePublished": "${post.data.publishDate.toISOString()}"
+          }`).join(', ')}
+        ]
+      }
+    </script>
+  )}
+</BaseLayout>
+
+<style>
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+</style>

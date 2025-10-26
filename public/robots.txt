@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+
+# Block admin and CMS pages
+Disallow: /admin/
+Disallow: /keystatic/
+Disallow: /api/
+Disallow: /_image/
+
+# Sitemap location
+Sitemap: https://apatero.com/sitemap.xml

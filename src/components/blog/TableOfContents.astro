@@ -1,0 +1,296 @@
+---
+// Table of Contents component that auto-generates from article headings
+export interface Props {
+  headings?: Array<{
+    depth: number;
+    text: string;
+    slug: string;
+  }>;
+}
+
+const { headings = [] } = Astro.props;
+
+// Filter to only show H2 and H3 headings
+const tocHeadings = headings.filter(h => h.depth === 2 || h.depth === 3);
+---
+
+{tocHeadings.length > 0 && (
+  <div class="toc-container not-prose">
+    <button
+      id="toc-toggle"
+      class="toc-toggle"
+      aria-expanded="false"
+      aria-controls="toc-content"
+    >
+      <div class="flex items-center justify-between w-full">
+        <div class="flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="8" y1="6" x2="21" y2="6"></line>
+            <line x1="8" y1="12" x2="21" y2="12"></line>
+            <line x1="8" y1="18" x2="21" y2="18"></line>
+            <line x1="3" y1="6" x2="3.01" y2="6"></line>
+            <line x1="3" y1="12" x2="3.01" y2="12"></line>
+            <line x1="3" y1="18" x2="3.01" y2="18"></line>
+          </svg>
+          <span class="font-semibold text-sm">Table of Contents</span>
+        </div>
+        <svg class="toc-chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </div>
+    </button>
+
+    <div id="toc-content" class="toc-content">
+      <nav class="toc-nav">
+        {tocHeadings.map((heading) => {
+          const isH3 = heading.depth === 3;
+          return (
+            <a
+              href={`#${heading.slug}`}
+              class={`toc-link ${isH3 ? 'toc-link-h3' : 'toc-link-h2'}`}
+              data-heading-id={heading.slug}
+            >
+              <span class="toc-bullet"></span>
+              <span class="toc-text">{heading.text}</span>
+            </a>
+          );
+        })}
+      </nav>
+    </div>
+  </div>
+)}
+
+<style>
+  .toc-container {
+    margin: 2rem 0;
+    background: linear-gradient(135deg, hsl(var(--surface) / 0.3), hsl(var(--surface) / 0.5));
+    border-radius: 0.875rem;
+    overflow: hidden;
+    box-shadow: 0 1px 3px hsl(var(--text) / 0.05);
+  }
+
+  .toc-toggle {
+    width: 100%;
+    padding: 1.125rem 1.375rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    color: hsl(var(--text));
+  }
+
+  .toc-toggle:hover {
+    background: hsl(var(--surface) / 0.6);
+  }
+
+  .toc-toggle:active {
+    transform: scale(0.99);
+  }
+
+  .toc-chevron {
+    transition: transform 0.3s ease;
+  }
+
+  .toc-toggle[aria-expanded="true"] .toc-chevron {
+    transform: rotate(180deg);
+  }
+
+  .toc-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+    border-top: 1px solid transparent;
+  }
+
+  .toc-content.expanded {
+    max-height: 800px;
+    transition: max-height 0.4s ease-in;
+    border-top: 1px solid hsl(var(--border) / 0.5);
+  }
+
+  .toc-nav {
+    padding: 0.75rem 1rem 1rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    position: relative;
+  }
+
+  .toc-nav::before {
+    content: '';
+    position: absolute;
+    left: 0.625rem;
+    top: 1rem;
+    bottom: 1rem;
+    width: 2px;
+    background: linear-gradient(180deg,
+      hsl(var(--border) / 0.3) 0%,
+      hsl(var(--border) / 0.6) 50%,
+      hsl(var(--border) / 0.3) 100%);
+    border-radius: 2px;
+  }
+
+  .toc-link {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.625rem 0.875rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: hsl(var(--text-muted));
+    text-decoration: none;
+    border-radius: 0.5rem;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+  }
+
+  .toc-link::before {
+    content: '';
+    position: absolute;
+    left: -0.875rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 12px;
+    height: 2px;
+    background: hsl(var(--border) / 0.4);
+    border-radius: 2px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .toc-link:hover {
+    color: hsl(var(--text));
+    background: hsl(var(--surface) / 0.8);
+    transform: translateX(2px);
+  }
+
+  .toc-link:hover::before {
+    width: 16px;
+    background: hsl(var(--text-muted));
+  }
+
+  .toc-link.active {
+    color: hsl(var(--text));
+    background: hsl(var(--surface));
+    font-weight: 500;
+  }
+
+  .toc-link.active::before {
+    width: 20px;
+    height: 3px;
+    background: hsl(var(--text));
+  }
+
+  .toc-link.active .toc-bullet {
+    background: hsl(var(--text));
+    transform: scale(1.15);
+  }
+
+  .toc-bullet {
+    flex-shrink: 0;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  .toc-text {
+    flex: 1;
+  }
+
+  .toc-link-h2 {
+    font-weight: 500;
+  }
+
+  .toc-link-h3 {
+    padding-left: 1.5rem;
+    font-size: 0.8125rem;
+    color: hsl(var(--text-muted) / 0.85);
+  }
+
+  @media (max-width: 768px) {
+    .toc-container {
+      margin: 1.5rem 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .toc-chevron,
+    .toc-content,
+    .toc-link {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  function initTableOfContents() {
+    const toggle = document.getElementById('toc-toggle');
+    const content = document.getElementById('toc-content');
+    const links = document.querySelectorAll('.toc-link');
+
+    if (!toggle || !content) return;
+
+    // Toggle functionality
+    toggle.addEventListener('click', () => {
+      const isExpanded = toggle.getAttribute('aria-expanded') === 'true';
+      toggle.setAttribute('aria-expanded', (!isExpanded).toString());
+      content.classList.toggle('expanded');
+    });
+
+    // Smooth scroll to section
+    links.forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const targetId = link.getAttribute('href')?.slice(1);
+        const targetElement = document.getElementById(targetId || '');
+
+        if (targetElement) {
+          // Close TOC on mobile after clicking
+          if (window.innerWidth < 768) {
+            toggle.setAttribute('aria-expanded', 'false');
+            content.classList.remove('expanded');
+          }
+
+          // Smooth scroll to target
+          const yOffset = -100; // Offset for fixed header
+          const y = targetElement.getBoundingClientRect().top + window.pageYOffset + yOffset;
+
+          window.scrollTo({ top: y, behavior: 'smooth' });
+        }
+      });
+    });
+
+    // Highlight active section on scroll
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const id = entry.target.getAttribute('id');
+          const tocLink = document.querySelector(`.toc-link[data-heading-id="${id}"]`);
+
+          if (entry.isIntersecting) {
+            links.forEach(link => link.classList.remove('active'));
+            tocLink?.classList.add('active');
+          }
+        });
+      },
+      {
+        rootMargin: '-100px 0px -80% 0px'
+      }
+    );
+
+    // Observe all headings
+    document.querySelectorAll('h2[id], h3[id]').forEach((heading) => {
+      observer.observe(heading);
+    });
+  }
+
+  // Initialize on page load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initTableOfContents);
+  } else {
+    initTableOfContents();
+  }
+
+  // Re-initialize on Astro page navigation (for View Transitions)
+  document.addEventListener('astro:page-load', initTableOfContents);
+</script>

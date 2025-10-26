@@ -1,0 +1,143 @@
+---
+import { LANGUAGES, DEFAULT_LANGUAGE, getLanguagePrefix } from '../../config/languages';
+
+export interface Props {
+  currentLanguage?: string;
+  availableLanguages?: string[];
+  currentSlug?: string;
+}
+
+const {
+  currentLanguage = DEFAULT_LANGUAGE,
+  availableLanguages = [DEFAULT_LANGUAGE],
+  currentSlug,
+} = Astro.props;
+
+// Only show switcher if there are multiple languages available
+const showSwitcher = availableLanguages.length > 1;
+
+// Get current language info
+const currentLangInfo = LANGUAGES[currentLanguage];
+---
+
+{showSwitcher && currentSlug && (
+  <div class="language-switcher relative">
+    <button
+      id="language-switcher-button"
+      class="flex items-center justify-center p-2 rounded-lg hover:opacity-70 transition-opacity text-text"
+      aria-label="Change language"
+      aria-haspopup="true"
+      aria-expanded="false"
+    >
+      <svg id="language-switcher-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition: transform 0.3s ease;">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="2" y1="12" x2="22" y2="12"></line>
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+      </svg>
+    </button>
+
+    <div
+      id="language-switcher-menu"
+      class="absolute left-0 top-full mt-2 bg-surface border border-border rounded-lg shadow-xl opacity-0 invisible transition-all duration-200 z-[100] min-w-max"
+      role="menu"
+      aria-labelledby="language-switcher-button"
+      style="pointer-events: none;"
+    >
+      <div class="py-2 px-3 grid grid-cols-6 gap-2">
+        {availableLanguages.map(lang => {
+          const langInfo = LANGUAGES[lang];
+          const prefix = getLanguagePrefix(lang);
+          const url = `${prefix}/blog/${currentSlug}`;
+          const isActive = lang === currentLanguage;
+
+          return (
+            <a
+              href={url}
+              class={`flex items-center justify-center p-2 text-3xl rounded transition-all hover:scale-110 ${
+                isActive
+                  ? 'bg-primary/20 ring-2 ring-primary shadow-md'
+                  : 'hover:bg-surface-hover'
+              }`}
+              role="menuitem"
+              title={langInfo.nativeName}
+            >
+              <span aria-hidden="true">{langInfo.flag}</span>
+            </a>
+          );
+        })}
+      </div>
+    </div>
+  </div>
+)}
+
+<script>
+  function initLanguageSwitcher() {
+    const button = document.getElementById('language-switcher-button');
+    const menu = document.getElementById('language-switcher-menu');
+    const icon = document.getElementById('language-switcher-icon');
+
+    if (!button || !menu || !icon) return;
+
+    let isOpen = false;
+
+    const toggleMenu = () => {
+      isOpen = !isOpen;
+
+      if (isOpen) {
+        menu.classList.remove('opacity-0', 'invisible');
+        menu.classList.add('opacity-100', 'visible');
+        menu.style.pointerEvents = 'auto';
+        icon.style.transform = 'rotate(180deg)';
+        button.setAttribute('aria-expanded', 'true');
+      } else {
+        menu.classList.add('opacity-0', 'invisible');
+        menu.classList.remove('opacity-100', 'visible');
+        menu.style.pointerEvents = 'none';
+        icon.style.transform = 'rotate(0deg)';
+        button.setAttribute('aria-expanded', 'false');
+      }
+    };
+
+    button.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleMenu();
+    });
+
+    // Close menu when clicking outside
+    document.addEventListener('click', (e) => {
+      if (isOpen && !menu.contains(e.target as Node) && !button.contains(e.target as Node)) {
+        toggleMenu();
+      }
+    });
+
+    // Close menu when pressing Escape
+    document.addEventListener('keydown', (e) => {
+      if (isOpen && e.key === 'Escape') {
+        toggleMenu();
+        button.focus();
+      }
+    });
+
+    // Close menu when clicking on a language link
+    const menuLinks = menu.querySelectorAll('a');
+    menuLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        if (isOpen) {
+          toggleMenu();
+        }
+      });
+    });
+  }
+
+  // Initialize on page load
+  document.addEventListener('DOMContentLoaded', initLanguageSwitcher);
+
+  // Re-initialize after view transitions (Astro)
+  document.addEventListener('astro:page-load', initLanguageSwitcher);
+</script>
+
+<style>
+  .language-switcher {
+    user-select: none;
+  }
+</style>

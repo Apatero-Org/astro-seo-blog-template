@@ -1,0 +1,236 @@
+---
+import { getCategories, getTags } from '../../lib/data';
+import { getPublishedBlogPosts } from '../../lib/posts';
+import { formatDate, calculateReadingTime } from '../../lib/utils';
+import { normalizeTagName } from '../../lib/tags';
+import { getTranslations } from '../../config/i18n';
+import { DEFAULT_LANGUAGE, getLanguagePrefix } from '../../config/languages';
+import fs from 'fs/promises';
+import path from 'path';
+
+export interface Props {
+  post?: any; // Optional post data for author info
+  readingTime?: number;
+  language?: string; // Language for translations
+}
+
+const { post, readingTime, language = DEFAULT_LANGUAGE } = Astro.props;
+const t = getTranslations(language);
+const languagePrefix = getLanguagePrefix(language);
+
+// Get data for sidebar
+const categories = await getCategories();
+const allPosts = await getPublishedBlogPosts();
+const featuredPost = allPosts.find(p => p.data.featured && p.slug !== post?.slug) ||
+                     allPosts.find(p => p.slug !== post?.slug) || allPosts[0];
+
+// Get category counts
+const categoryCounts = allPosts.reduce((acc, post) => {
+  const category = post.data.category;
+  acc[category] = (acc[category] || 0) + 1;
+  return acc;
+}, {});
+
+// Get popular tags with counts
+const allPostTags = allPosts.flatMap(post => post.data.tags || []);
+const tagCounts = allPostTags.reduce((acc, tag) => {
+  acc[tag] = (acc[tag] || 0) + 1;
+  return acc;
+}, {});
+const popularTagsWithCounts = Object.entries(tagCounts)
+  .sort((a, b) => b[1] - a[1])
+  .slice(0, 10);
+
+// Get author information if post is provided
+let authorInfo = null;
+if (post) {
+  try {
+    const authorsPath = path.join(process.cwd(), 'public', 'data', 'authors', 'authors.json');
+    const authorsData = JSON.parse(await fs.readFile(authorsPath, 'utf-8'));
+    authorInfo = authorsData.authors.find(a => a.id === post.data.author) || null;
+  } catch (e) {
+    console.error('Error loading author:', e);
+  }
+}
+
+// Get related posts for sidebar (by shared tags and category)
+let relatedPostsForSidebar = [];
+if (post) {
+  const sameCategoryPosts = allPosts.filter(p =>
+    p.data.category === post.data.category && p.slug !== post.slug
+  );
+
+  const sameTagsPosts = allPosts.filter(p => {
+    const sharedTags = p.data.tags.filter(tag => post.data.tags.includes(tag));
+    return sharedTags.length > 0 && p.slug !== post.slug;
+  });
+
+  // Combine and deduplicate, prioritizing same category
+  const combinedPosts = [...sameCategoryPosts, ...sameTagsPosts];
+  const uniquePosts = Array.from(new Map(combinedPosts.map(p => [p.slug, p])).values());
+  relatedPostsForSidebar = uniquePosts.slice(0, 5);
+}
+---
+
+<aside class="space-y-8 lg:sticky lg:top-8 lg:h-fit">
+  <!-- Back to All Blogs -->
+  <div>
+    <a href={`${languagePrefix}/blog`} class="inline-flex items-center gap-2 px-4 py-2 border border-border rounded-full text-text hover:bg-text hover:text-background transition-all text-sm font-medium w-full justify-center">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 19 5 12 12 5"></polyline>
+      </svg>
+      {t.backToAllBlogs}
+    </a>
+  </div>
+
+  <!-- Related Posts in Sidebar -->
+  {relatedPostsForSidebar.length > 0 && (
+    <div class="border-t pt-8">
+      <h3 class="text-sm font-bold uppercase mb-4">{t.relatedArticles}</h3>
+      <div class="space-y-4">
+        {relatedPostsForSidebar.map((relatedPost) => (
+          <a href={`/blog/${relatedPost.slug}`} class="block group hover:bg-surface transition-colors rounded-lg p-2 -m-2">
+            <div class="flex gap-3">
+              {relatedPost.data.heroImage && (
+                <div class="w-20 h-20 flex-shrink-0 overflow-hidden rounded-lg">
+                  <img
+                    src={relatedPost.data.heroImage}
+                    alt={relatedPost.data.heroImageAlt || relatedPost.data.title}
+                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
+                  />
+                </div>
+              )}
+              <div class="flex-1 min-w-0">
+                <div class="text-xs text-text-muted mb-1 uppercase font-medium">
+                  {relatedPost.data.category}
+                </div>
+                <h4 class="text-sm font-semibold line-clamp-2 group-hover:opacity-70 transition-opacity">
+                  {relatedPost.data.title}
+                </h4>
+              </div>
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  )}
+
+  <!-- Featured Article -->
+  {featuredPost && (
+    <div class="border-t pt-8">
+      <h3 class="text-sm font-bold uppercase mb-4">{t.featuredArticle}</h3>
+      <a href={`/blog/${featuredPost.slug}`} class="block group">
+        <div class="border border-border rounded-xl overflow-hidden hover:bg-surface transition-colors">
+          {featuredPost.data.heroImage && (
+            <div class="aspect-video overflow-hidden">
+              <img
+                src={featuredPost.data.heroImage}
+                alt={featuredPost.data.heroImageAlt || featuredPost.data.title}
+                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                loading="lazy"
+              />
+            </div>
+          )}
+          <div class="p-4">
+            <div class="text-xs text-text-muted mb-2 uppercase font-medium">
+              {featuredPost.data.category}
+            </div>
+            <h4 class="font-semibold line-clamp-2 mb-2 group-hover:opacity-80 transition-opacity">
+              {featuredPost.data.title}
+            </h4>
+            <p class="text-sm text-text-muted line-clamp-2">
+              {featuredPost.data.description}
+            </p>
+          </div>
+        </div>
+      </a>
+    </div>
+  )}
+
+  <!-- Article Info -->
+  {post && readingTime && (
+    <div class="border-t pt-8">
+      <h3 class="text-sm font-bold uppercase mb-4">{t.articleInfo}</h3>
+      <div class="space-y-3 text-sm">
+        <div class="flex justify-between">
+          <span class="text-text-muted">{t.readingTime}</span>
+          <span class="font-medium">{readingTime} {t.minRead}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-text-muted">{t.category}</span>
+          <span class="font-medium">{post.data.category}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-text-muted">{t.published}</span>
+          <span class="font-medium">{formatDate(post.data.publishDate)}</span>
+        </div>
+      </div>
+    </div>
+  )}
+
+  <!-- Author Info -->
+  {authorInfo && (
+    <div class="border-t pt-8">
+      <h3 class="text-sm font-bold uppercase mb-4">{t.aboutTheAuthor}</h3>
+      <a href={`/author/${authorInfo.id}`} class="block group hover:bg-surface transition-colors rounded-lg p-2 -m-2">
+        <div class="flex items-center gap-3 mb-3">
+          {authorInfo.avatar ? (
+            <img
+              src={authorInfo.avatar}
+              alt={authorInfo.name}
+              class="w-12 h-12 rounded-full object-cover flex-shrink-0"
+            />
+          ) : (
+            <div class="w-12 h-12 rounded-full bg-text text-background flex items-center justify-center font-bold flex-shrink-0">
+              {authorInfo.name.split(' ').map(name => name.charAt(0)).join('').slice(0, 2).toUpperCase()}
+            </div>
+          )}
+          <div class="min-w-0">
+            <h4 class="font-semibold text-sm group-hover:opacity-70 transition-opacity">{authorInfo.name}</h4>
+          </div>
+        </div>
+
+        {authorInfo.bio && (
+          <p class="text-xs text-text-muted mb-3 line-clamp-3">
+            {authorInfo.bio}
+          </p>
+        )}
+      </a>
+    </div>
+  )}
+
+  <!-- Categories -->
+  <div>
+    <h3 class="text-sm font-bold uppercase mb-4">{t.categories}</h3>
+    <div class="flex flex-wrap gap-2">
+      {categories.map((category) => {
+        const count = categoryCounts[category.name] || 0;
+        return (
+          <a
+            href={`/blog/category/${category.slug}`}
+            class="px-3 py-1 bg-surface rounded-full text-sm hover:bg-border transition-colors"
+          >
+            {category.name} ({count})
+          </a>
+        );
+      })}
+    </div>
+  </div>
+
+  <!-- Popular Tags -->
+  <div>
+    <h3 class="text-sm font-bold uppercase mb-4">{t.popularTags}</h3>
+    <div class="flex flex-wrap gap-2">
+      {popularTagsWithCounts.map(([tag, count]) => (
+        <a
+          href={`/blog/tag/${normalizeTagName(tag)}`}
+          class="px-3 py-1 bg-surface rounded-full text-sm hover:bg-border transition-colors"
+        >
+          #{tag} ({count})
+        </a>
+      ))}
+    </div>
+  </div>
+</aside>

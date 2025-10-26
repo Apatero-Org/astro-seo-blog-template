@@ -1,0 +1,341 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import fs from 'fs/promises';
+import path from 'path';
+
+// Get all images
+const imagesDir = path.join(process.cwd(), 'public', 'blog-images');
+let images = [];
+try {
+  await fs.mkdir(imagesDir, { recursive: true });
+  const files = await fs.readdir(imagesDir);
+  images = files
+    .filter(file => /\.(jpg|jpeg|png|gif|webp)$/i.test(file))
+    .sort((a, b) => b.localeCompare(a)); // Newest first
+} catch (e) {
+  // Directory doesn't exist yet
+}
+
+// Load image metadata
+const metadataPath = path.join(process.cwd(), 'public', 'blog-images', 'metadata', 'images-metadata.json');
+let metadata = { images: {} };
+try {
+  const metadataContent = await fs.readFile(metadataPath, 'utf-8');
+  metadata = JSON.parse(metadataContent);
+} catch (e) {
+  // File doesn't exist yet
+}
+---
+
+<AdminLayout title="Media Library" activeNav="images">
+  <div class="p-6 lg:p-8">
+    <!-- Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl lg:text-4xl font-display font-bold mb-1">MEDIA LIBRARY</h1>
+      <p class="text-sm text-text-muted">Manage your blog images</p>
+    </div>
+
+    <!-- Hidden file input -->
+    <input
+      type="file"
+      id="imageInput"
+      accept="image/*"
+      class="hidden"
+    />
+
+    <!-- Images Grid -->
+    <div class="mb-8">
+        <h2 class="text-xl font-display font-bold uppercase mb-4">Gallery ({images.length})</h2>
+        {images.length > 0 ? (
+          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <!-- Upload Button as first item -->
+            <div
+              onclick="document.getElementById('imageInput').click()"
+              class="border-2 border-dashed border-border rounded aspect-square flex items-center justify-center cursor-pointer hover:bg-surface transition-colors group"
+            >
+              <div class="text-center">
+                <svg class="w-8 h-8 mx-auto mb-2 text-text-muted group-hover:text-text transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                <p class="text-xs text-text-muted group-hover:text-text transition-colors uppercase tracking-wider">Upload</p>
+              </div>
+            </div>
+            {images.map((image) => {
+              const imageUrl = `/blog-images/${image}`;
+              return (
+                <div class="border border-border rounded-lg overflow-hidden" data-image-name={image}>
+                  <div class="aspect-square bg-surface relative">
+                    <img
+                      src={imageUrl}
+                      alt={metadata.images[image]?.alt || image}
+                      title={metadata.images[image]?.title || ''}
+                      class="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                  <div class="p-3 space-y-2">
+                    <div>
+                      <input
+                        type="text"
+                        placeholder="Display name..."
+                        value={metadata.images[image]?.displayName || ''}
+                        data-image={image}
+                        data-field="displayName"
+                        class="metadata-input w-full text-xs px-2 py-1 bg-background border border-border rounded focus:outline-none focus:border-text"
+                      />
+                    </div>
+                    <div>
+                      <input
+                        type="text"
+                        placeholder="Alt text (SEO)..."
+                        value={metadata.images[image]?.alt || ''}
+                        data-image={image}
+                        data-field="alt"
+                        class="metadata-input w-full text-xs px-2 py-1 bg-background border border-border rounded focus:outline-none focus:border-text"
+                      />
+                    </div>
+                    <div>
+                      <input
+                        type="text"
+                        placeholder="Title (tooltip)..."
+                        value={metadata.images[image]?.title || ''}
+                        data-image={image}
+                        data-field="title"
+                        class="metadata-input w-full text-xs px-2 py-1 bg-background border border-border rounded focus:outline-none focus:border-text"
+                      />
+                    </div>
+                    <div>
+                      <input
+                        type="text"
+                        placeholder="Caption..."
+                        value={metadata.images[image]?.caption || ''}
+                        data-image={image}
+                        data-field="caption"
+                        class="metadata-input w-full text-xs px-2 py-1 bg-background border border-border rounded focus:outline-none focus:border-text"
+                      />
+                    </div>
+                    <div class="flex gap-2 pt-1">
+                      <button
+                        onclick={`saveImageMetadata('${image}')`}
+                        class="flex-1 px-2 py-1 text-xs bg-text text-background rounded hover:opacity-90 transition-opacity"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onclick={`deleteImage('${image}')`}
+                        class="px-2 py-1 text-xs bg-red-600 text-white rounded hover:opacity-90 transition-opacity"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div class="py-12 text-center border-t border-border">
+            <button
+              onclick="document.getElementById('imageInput').click()"
+              class="inline-block px-6 py-3 bg-text text-background rounded-full font-bold hover:bg-text/90 transition-all hover:scale-105"
+            >
+              UPLOAD FIRST IMAGE
+            </button>
+          </div>
+        )}
+      </div>
+  </div>
+
+  <script define:vars={{ metadataImages: metadata.images }}>
+    // Load metadata
+    const imageMetadata = {...metadataImages};
+
+    window.saveImageMetadata = async function(imageName) {
+      console.log('Saving metadata for:', imageName);
+      
+      const imageCard = document.querySelector(`[data-image-name="${imageName}"]`);
+      if (!imageCard) {
+        console.error('Image card not found');
+        return;
+      }
+      
+      // Get all input values
+      const inputs = imageCard.querySelectorAll('.metadata-input');
+      const metadata = {};
+      
+      inputs.forEach(input => {
+        const field = input.dataset.field;
+        metadata[field] = input.value;
+        console.log(`Field ${field}:`, input.value);
+      });
+      
+      // Update local metadata
+      imageMetadata[imageName] = metadata;
+      
+      // Get the save button
+      const saveBtn = event.target;
+      const originalText = saveBtn.textContent;
+      
+      console.log('Metadata to save:', metadata);
+      
+      try {
+        // Save to server
+        const response = await fetch('/api/images/metadata', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            imageName, 
+            metadata: metadata 
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to save metadata');
+        }
+        
+        // Update the image attributes
+        const img = imageCard.querySelector('img');
+        if (metadata.alt) {
+          img.alt = metadata.alt;
+        }
+        if (metadata.title) {
+          img.title = metadata.title;
+        }
+        
+        // Show success message
+        saveBtn.textContent = 'Saved!';
+        saveBtn.classList.add('bg-green-600');
+        setTimeout(() => {
+          saveBtn.textContent = originalText;
+          saveBtn.classList.remove('bg-green-600');
+        }, 1500);
+        
+      } catch (error) {
+        console.error('Failed to save metadata:', error);
+        // Show error message
+        saveBtn.textContent = 'Error!';
+        saveBtn.classList.add('bg-red-600');
+        setTimeout(() => {
+          saveBtn.textContent = originalText;
+          saveBtn.classList.remove('bg-red-600');
+        }, 1500);
+      }
+    }
+
+
+    window.deleteImage = async function(imageName) {
+      if (!confirm(`Are you sure you want to delete "${imageName}"? This action cannot be undone.`)) {
+        return;
+      }
+      
+      console.log('Deleting image:', imageName);
+      
+      try {
+        // Delete the image file and metadata
+        const response = await fetch('/api/images/delete', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ imageName }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to delete image');
+        }
+        
+        console.log('Image deleted successfully');
+        
+        // Remove the image card from DOM
+        const imageCard = document.querySelector(`[data-image-name="${imageName}"]`);
+        if (imageCard) {
+          imageCard.remove();
+        }
+        
+        // Check if we need to show empty state
+        const remainingImages = document.querySelectorAll('[data-image-name]');
+        if (remainingImages.length === 1) { // Only the upload button remains
+          window.location.reload();
+        }
+        
+      } catch (error) {
+        console.error('Failed to delete image:', error);
+        alert('Failed to delete image: ' + error.message);
+      }
+    }
+
+    // Handle file selection
+    document.getElementById('imageInput')?.addEventListener('change', async (e) => {
+      const input = e.target;
+      
+      if (!input.files || input.files.length === 0) {
+        return;
+      }
+
+      const file = input.files[0];
+      const formData = new FormData();
+      formData.append('file', file);
+
+      // Show uploading state
+      const uploadButton = document.querySelector('[onclick*="imageInput"]');
+      if (uploadButton) {
+        uploadButton.innerHTML = `
+          <div class="text-center">
+            <svg class="w-12 h-12 mx-auto mb-2 text-text-muted animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            </svg>
+            <p class="text-sm text-text-muted">Uploading...</p>
+          </div>
+        `;
+      }
+
+      try {
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          // Clear input
+          input.value = '';
+          
+          // Reload page to show new image
+          window.location.reload();
+        } else {
+          alert(`Error: ${result.error}`);
+          // Reset upload button
+          if (uploadButton) {
+            uploadButton.innerHTML = `
+              <div class="text-center">
+                <svg class="w-12 h-12 mx-auto mb-2 text-text-muted group-hover:text-text transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                <p class="text-sm text-text-muted group-hover:text-text transition-colors">Upload Image</p>
+              </div>
+            `;
+          }
+        }
+      } catch (error) {
+        alert(`Upload failed: ${error.message}`);
+        // Reset upload button
+        const uploadButton = document.querySelector('[onclick*="imageInput"]');
+        if (uploadButton) {
+          uploadButton.innerHTML = `
+            <div class="text-center">
+              <svg class="w-12 h-12 mx-auto mb-2 text-text-muted group-hover:text-text transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+              </svg>
+              <p class="text-sm text-text-muted group-hover:text-text transition-colors">Upload Image</p>
+            </div>
+          `;
+        }
+      }
+    });
+
+  </script>
+</AdminLayout>

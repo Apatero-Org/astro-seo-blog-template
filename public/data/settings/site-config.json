@@ -1,11 +1,11 @@
 {
-  "title": "Astro SEO Blog Template",
-  "description": "A modern, feature-rich, and SEO-optimized blog template built with Astro. Perfect for developers and content creators.",
+  "title": "Astro SEO Blog",
+  "description": "Modern SEO-optimized blog built with Astro. Fast, scalable, and feature-rich blogging platform.",
   "url": "https://astroseoblog.com",
-  "author": "Your Name",
-  "authorEmail": "your.email@example.com",
-  "authorWebsite": "",
-  "authorAvatar": "/favicon.svg",
+  "author": "Kevin Gabeci",
+  "authorEmail": "kgabeci@gmail.com",
+  "authorWebsite": "https://kevingabeci.com",
+  "authorAvatar": "/Favicon.png",
   "locale": "en",
   "ogImage": "/og-image.jpg",
   "navItems": [
@@ -25,12 +25,12 @@
   "postsPerPage": 10,
   "recentPostsCount": 5,
   "social": {
-    "twitter": "@yourusername",
-    "github": "yourusername",
-    "linkedin": "https://www.linkedin.com/in/yourusername/",
-    "instagram": "@yourusername",
-    "youtube": "https://www.youtube.com/@yourusername",
-    "discord": "https://discord.gg/your-invite"
+    "twitter": "",
+    "github": "kgabeci",
+    "linkedin": "https://www.linkedin.com/in/kevin-gabeci/",
+    "instagram": "",
+    "youtube": "",
+    "discord": ""
   },
   "features": {
     "darkMode": true,

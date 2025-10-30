@@ -1,7 +1,6 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { formatDate, calculateReadingTime, extractHeadings, extractFAQ, extractReviews, slugify } from '../../../lib/utils';
-import BlogCTA from '../../../components/blog/BlogCTA.astro';
 import BlogSidebar from '../../../components/blog/BlogSidebar.astro';
 import BackToTop from '../../../components/blog/BackToTop.astro';
 import TableOfContents from '../../../components/blog/TableOfContents.astro';
@@ -239,9 +238,6 @@ const languagePrefix = getLanguagePrefix(lang);
 
     {/* Article Content - Part 4 (50-65%) */}
     <div class="prose-custom" set:html={betweenThirdFourth} />
-
-    {/* CTA #4 - MAIN Course CTA (65%) - Primary conversion point */}
-    <BlogCTA language={lang} />
 
     {/* Article Content - Part 5 (65-100%) - Conclusion & advanced tips */}
     <div class="prose-custom" set:html={afterFourth} />

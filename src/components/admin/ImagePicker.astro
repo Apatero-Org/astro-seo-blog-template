@@ -1,0 +1,325 @@
+---
+import fs from 'fs/promises';
+import path from 'path';
+
+// Get all images
+const imagesDir = path.join(process.cwd(), 'public', 'blog-images');
+let images = [];
+try {
+  await fs.mkdir(imagesDir, { recursive: true });
+  const files = await fs.readdir(imagesDir);
+  images = files
+    .filter(file => /\.(jpg|jpeg|png|gif|webp)$/i.test(file))
+    .sort((a, b) => b.localeCompare(a));
+} catch (e) {
+  // Directory doesn't exist yet
+}
+
+// Load image metadata
+const metadataPath = path.join(process.cwd(), 'public', 'blog-images', 'metadata', 'images-metadata.json');
+let metadata = { images: {} };
+try {
+  const metadataContent = await fs.readFile(metadataPath, 'utf-8');
+  metadata = JSON.parse(metadataContent);
+} catch (e) {
+  // File doesn't exist yet
+}
+---
+
+<!-- Image Picker Modal -->
+<div id="imagePickerModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden">
+  <div class="flex items-center justify-center min-h-screen p-4">
+    <div class="bg-background border-2 border-text rounded-lg max-w-6xl w-full max-h-[80vh] overflow-hidden">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between p-6 border-b border-border">
+        <h2 class="text-xl font-bold">Select Image</h2>
+        <button 
+          onclick="closeImagePicker()"
+          class="p-2 hover:bg-surface rounded-lg transition-colors"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Tabs -->
+      <div class="flex border-b border-border">
+        <button 
+          onclick="switchTab('gallery')"
+          id="galleryTab"
+          class="px-6 py-3 font-medium border-b-2 border-text transition-colors"
+        >
+          Gallery
+        </button>
+        <button 
+          onclick="switchTab('upload')"
+          id="uploadTab"
+          class="px-6 py-3 font-medium border-b-2 border-transparent hover:border-border transition-colors"
+        >
+          Upload New
+        </button>
+        <button 
+          onclick="switchTab('url')"
+          id="urlTab"
+          class="px-6 py-3 font-medium border-b-2 border-transparent hover:border-border transition-colors"
+        >
+          From URL
+        </button>
+      </div>
+
+      <!-- Content Area -->
+      <div class="overflow-y-auto" style="max-height: calc(80vh - 200px);">
+        <!-- Gallery Tab -->
+        <div id="galleryContent" class="p-6">
+          {images.length > 0 ? (
+            <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {images.map((image) => {
+                const imageUrl = `/blog-images/${image}`;
+                return (
+                  <div 
+                    onclick={`selectImage('${imageUrl}', '${image}')`}
+                    class="aspect-square bg-surface border-2 border-border rounded-lg overflow-hidden cursor-pointer hover:border-text transition-all group relative"
+                  >
+                    <img
+                      src={imageUrl}
+                      alt={metadata.images[image]?.alt || image}
+                      title={metadata.images[image]?.title || ''}
+                      class="w-full h-full object-cover group-hover:scale-110 transition-transform"
+                      loading="lazy"
+                    />
+                    {metadata.images[image]?.alt && (
+                      <div class="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs p-1 truncate opacity-0 group-hover:opacity-100 transition-opacity">
+                        {metadata.images[image].alt}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div class="text-center py-12">
+              <p class="text-text-muted mb-4">No images in library yet.</p>
+              <button onclick="switchTab('upload')" class="px-4 py-2 bg-text text-background rounded-lg hover:opacity-90">
+                Upload First Image
+              </button>
+            </div>
+          )}
+        </div>
+
+        <!-- Upload Tab -->
+        <div id="uploadContent" class="p-6 hidden">
+          <div class="border-2 border-dashed border-border rounded-lg p-8 text-center">
+            <svg class="w-12 h-12 mx-auto mb-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+            </svg>
+            <input
+              type="file"
+              id="modalImageInput"
+              accept="image/*"
+              class="hidden"
+              onchange="handleModalUpload(event)"
+            />
+            <label for="modalImageInput" class="inline-block px-6 py-2 bg-text text-background rounded-lg cursor-pointer hover:opacity-90 transition-opacity">
+              Choose File
+            </label>
+            <p class="text-sm text-text-muted mt-2">or drag and drop</p>
+            <p class="text-xs text-text-muted mt-1">PNG, JPG, GIF, WEBP up to 10MB</p>
+          </div>
+          <div id="modalUploadStatus" class="mt-4"></div>
+        </div>
+
+        <!-- URL Tab -->
+        <div id="urlContent" class="p-6 hidden">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium mb-2">Image URL</label>
+              <input
+                type="url"
+                id="externalImageUrl"
+                placeholder="https://example.com/image.jpg"
+                class="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-text"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">Preview</label>
+              <div id="urlPreview" class="w-full h-48 bg-surface border border-border rounded-lg flex items-center justify-center">
+                <p class="text-text-muted text-sm">Enter URL to preview</p>
+              </div>
+            </div>
+            <button 
+              onclick="selectExternalImage()"
+              class="px-6 py-2 bg-text text-background rounded-lg hover:opacity-90 transition-opacity"
+            >
+              Use This Image
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script define:vars={{ imageMetadata: metadata.images }}>
+  let currentTarget = null;
+  let currentMode = 'hero'; // 'hero' or 'content'
+  const metadataLookup = {...imageMetadata};
+
+  function openImagePicker(target, mode = 'hero') {
+    currentTarget = target;
+    currentMode = mode;
+    document.getElementById('imagePickerModal').classList.remove('hidden');
+    switchTab('gallery');
+  }
+
+  function closeImagePicker() {
+    document.getElementById('imagePickerModal').classList.add('hidden');
+    currentTarget = null;
+  }
+
+  function switchTab(tab) {
+    // Hide all content
+    document.getElementById('galleryContent').classList.add('hidden');
+    document.getElementById('uploadContent').classList.add('hidden');
+    document.getElementById('urlContent').classList.add('hidden');
+    
+    // Remove active states
+    document.getElementById('galleryTab').classList.remove('border-text');
+    document.getElementById('uploadTab').classList.remove('border-text');
+    document.getElementById('urlTab').classList.remove('border-text');
+    document.getElementById('galleryTab').classList.add('border-transparent');
+    document.getElementById('uploadTab').classList.add('border-transparent');
+    document.getElementById('urlTab').classList.add('border-transparent');
+    
+    // Show selected content and activate tab
+    if (tab === 'gallery') {
+      document.getElementById('galleryContent').classList.remove('hidden');
+      document.getElementById('galleryTab').classList.add('border-text');
+      document.getElementById('galleryTab').classList.remove('border-transparent');
+    } else if (tab === 'upload') {
+      document.getElementById('uploadContent').classList.remove('hidden');
+      document.getElementById('uploadTab').classList.add('border-text');
+      document.getElementById('uploadTab').classList.remove('border-transparent');
+    } else if (tab === 'url') {
+      document.getElementById('urlContent').classList.remove('hidden');
+      document.getElementById('urlTab').classList.add('border-text');
+      document.getElementById('urlTab').classList.remove('border-transparent');
+    }
+  }
+
+  function selectImage(url, imageName = null) {
+    if (currentMode === 'hero' || currentMode === 'avatar') {
+      // For hero image or avatar, set the input value
+      const targetElement = document.getElementById(currentTarget);
+      if (targetElement) {
+        targetElement.value = url;
+        // Trigger change event so listeners can update
+        const event = new Event('change', { bubbles: true });
+        targetElement.dispatchEvent(event);
+        
+        // Also update the preview if it exists
+        const imgPreview = document.querySelector(`[data-preview-for="${currentTarget}"]`);
+        if (imgPreview) {
+          imgPreview.src = url;
+        }
+        // Update hero image preview
+        if (window.updateHeroImagePreview) {
+          window.updateHeroImagePreview(url);
+        }
+        // Update avatar preview if this is for author avatar
+        if (currentTarget === 'author-avatar' && window.updateAvatarPreview) {
+          window.updateAvatarPreview(url);
+        }
+      }
+    } else if (currentMode === 'content') {
+      // For content, insert markdown with metadata at cursor position
+      const textarea = document.getElementById('content');
+      if (textarea) {
+        const cursorPos = textarea.selectionStart;
+        const textBefore = textarea.value.substring(0, cursorPos);
+        const textAfter = textarea.value.substring(cursorPos);
+        
+        // Get metadata for the image
+        let markdown = '';
+        if (imageName && metadataLookup[imageName]) {
+          const meta = metadataLookup[imageName];
+          markdown = `\n![${meta.alt || 'Image'}](${url}`;
+          if (meta.title) {
+            markdown += ` "${meta.title}"`;
+          }
+          markdown += ')';
+          if (meta.caption) {
+            markdown += `\n*${meta.caption}*`;
+          }
+          markdown += '\n';
+        } else {
+          // Fallback if no metadata
+          markdown = `\n![Image](${url})\n`;
+        }
+        
+        textarea.value = textBefore + markdown + textAfter;
+        textarea.focus();
+        textarea.setSelectionRange(cursorPos + markdown.length, cursorPos + markdown.length);
+      }
+    }
+    closeImagePicker();
+  }
+
+  function selectExternalImage() {
+    const url = document.getElementById('externalImageUrl').value;
+    if (url) {
+      selectImage(url);
+    }
+  }
+
+  async function handleModalUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const statusDiv = document.getElementById('modalUploadStatus');
+    statusDiv.innerHTML = '<p class="text-text-muted">Uploading...</p>';
+
+    try {
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        statusDiv.innerHTML = '<p class="text-green-600">Upload successful! Selecting image...</p>';
+        setTimeout(() => {
+          selectImage(result.url);
+        }, 500);
+      } else {
+        statusDiv.innerHTML = `<p class="text-red-600">Error: ${result.error}</p>`;
+      }
+    } catch (error) {
+      statusDiv.innerHTML = `<p class="text-red-600">Upload failed: ${error.message}</p>`;
+    }
+  }
+
+  // URL preview
+  document.getElementById('externalImageUrl')?.addEventListener('input', (e) => {
+    const url = e.target.value;
+    const preview = document.getElementById('urlPreview');
+    
+    if (url) {
+      preview.innerHTML = `<img src="${url}" alt="Preview" class="max-w-full max-h-full object-contain" onerror="this.onerror=null; this.parentElement.innerHTML='<p class=\\'text-text-muted text-sm\\'>Failed to load image</p>';">`;
+    } else {
+      preview.innerHTML = '<p class="text-text-muted text-sm">Enter URL to preview</p>';
+    }
+  });
+
+  // Make openImagePicker available globally
+  window.openImagePicker = openImagePicker;
+  window.closeImagePicker = closeImagePicker;
+  window.switchTab = switchTab;
+  window.selectImage = selectImage;
+  window.selectExternalImage = selectExternalImage;
+  window.handleModalUpload = handleModalUpload;
+</script>

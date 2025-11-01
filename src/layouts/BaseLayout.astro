@@ -1,0 +1,239 @@
+---
+import { SITE_CONFIG, GA_MEASUREMENT_ID } from '../data/site-config';
+import Footer from '../components/common/Footer.astro';
+import SEOHead from '../components/seo/SEOHead.astro';
+import ThemeToggle from '../components/common/ThemeToggle.astro';
+import LanguageSwitcher from '../components/common/LanguageSwitcher.astro';
+import StructuredData from '../components/StructuredData.astro';
+import SearchModal from '../components/search/SearchModal.astro';
+import '../assets/styles/global.css';
+
+export interface Props {
+  title?: string;
+  description?: string;
+  ogImage?: string;
+  article?: {
+    publishedTime?: Date;
+    modifiedTime?: Date;
+    author?: string;
+    tags?: string[];
+  };
+  noindex?: boolean;
+  breadcrumb?: Array<{
+    name: string;
+    url: string;
+  }>;
+  faq?: Array<{
+    question: string;
+    answer: string;
+  }>;
+  reviews?: Array<{
+    itemName: string;
+    ratingValue: number;
+    bestRating: number;
+    worstRating: number;
+    reviewBody?: string;
+  }>;
+  hideSearch?: boolean;
+  hideThemeToggle?: boolean;
+  siteName?: string;
+  currentLanguage?: string;
+  availableLanguages?: string[];
+  currentSlug?: string;
+  pageType?: 'blog-post' | 'blog-index' | 'blog-tag' | 'blog-category';
+  pageIdentifier?: string;
+}
+
+const {
+  title = SITE_CONFIG.title,
+  description = SITE_CONFIG.description,
+  ogImage = SITE_CONFIG.ogImage,
+  article,
+  noindex = false,
+  breadcrumb,
+  faq,
+  reviews,
+  hideSearch = false,
+  hideThemeToggle = false,
+  siteName,
+  currentLanguage,
+  availableLanguages,
+  currentSlug,
+  pageType,
+  pageIdentifier,
+} = Astro.props;
+
+// Check if we're on a policy page
+const isPolicyPage = Astro.url.pathname.includes('terms-of-service') ||
+                   Astro.url.pathname.includes('privacy-policy') ||
+                   Astro.url.pathname.includes('refund-cancellation-policy') ||
+                   Astro.url.pathname.includes('ai-content-usage-policy');
+
+// Check if we're on a blog page (including translated pages like /es/blog, /fr/blog, etc.)
+const isBlogPage = Astro.url.pathname.includes('/blog') || Astro.url.pathname.startsWith('/page/');
+---
+
+<!DOCTYPE html>
+<html lang={SITE_CONFIG.locale} class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/Favicon.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/Favicon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/Favicon.png" />
+    <meta name="generator" content={Astro.generator} />
+
+    <!-- Google Analytics - Configure with your GA_MEASUREMENT_ID in site-config.json -->
+    {GA_MEASUREMENT_ID && (
+      <>
+        <script async src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}></script>
+        <script is:inline define:vars={{ GA_MEASUREMENT_ID }}>
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', GA_MEASUREMENT_ID);
+        </script>
+      </>
+    )}
+
+    <!-- Google Fonts - non-render-blocking -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Load fonts async to prevent render blocking -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'" />
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" />
+    </noscript>
+
+    <SEOHead
+      title={title}
+      description={description}
+      ogImage={ogImage}
+      article={article}
+      noindex={noindex}
+      breadcrumb={breadcrumb}
+      faq={faq}
+      reviews={reviews}
+      currentLanguage={currentLanguage}
+      availableLanguages={availableLanguages}
+      currentSlug={currentSlug}
+      pageType={pageType}
+      pageIdentifier={pageIdentifier}
+    />
+    
+    <!-- Structured Data (Schema.org) -->
+    <StructuredData
+      type={article ? 'article' : 'website'}
+      title={title}
+      description={description}
+      author={article?.author}
+      datePublished={article?.publishedTime?.toISOString()}
+      dateModified={article?.modifiedTime?.toISOString()}
+      image={ogImage}
+      url={Astro.url.toString()}
+    />
+
+    <!-- Dark mode script -->
+    <script is:inline>
+      const theme = (() => {
+        if (typeof localStorage !== 'undefined' && localStorage.getItem('theme')) {
+          return localStorage.getItem('theme');
+        }
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          return 'dark';
+        }
+        return 'light';
+      })();
+      
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+      }
+    </script>
+  </head>
+  <body>
+    <!-- Floating Theme Toggle and Language Switcher -->
+    {!hideThemeToggle && (
+      <div class="fixed top-4 right-4 z-50 flex items-center gap-2">
+        <ThemeToggle />
+      </div>
+    )}
+
+    <!-- Language Switcher (only on blog pages) -->
+    {isBlogPage && (
+      <div class="fixed top-4 left-4 z-50">
+        <LanguageSwitcher
+          currentLanguage={currentLanguage}
+          availableLanguages={availableLanguages}
+          currentSlug={currentSlug}
+        />
+      </div>
+    )}
+    
+    <!-- Navigation buttons -->
+    {isPolicyPage ? (
+      <!-- Policy pages: Back to Home -->
+      <a
+        href="/"
+        class="fixed top-4 right-16 z-50 flex items-center gap-2 px-3 py-2 hover:opacity-70 transition-opacity text-text text-sm"
+        aria-label="Home"
+        title="Home"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12H3m7-7-7 7 7 7"></path>
+        </svg>
+        <span>Home</span>
+      </a>
+    ) : isBlogPage ? (
+      <!-- Blog pages: Search + Home -->
+      <div class="fixed top-4 right-16 z-50 flex items-center gap-2">
+        <a
+          href="/"
+          class="p-2 hover:opacity-70 transition-opacity"
+          aria-label="Home"
+          title="Home"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+        </a>
+        {!hideSearch && (
+          <button
+            id="search-trigger"
+            class="p-2 hover:opacity-70 transition-opacity"
+            aria-label="Open search (Ctrl+K)"
+            title="Search (Ctrl+K)"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="M21 21l-4.35-4.35"></path>
+            </svg>
+          </button>
+        )}
+      </div>
+    ) : !hideSearch && (
+      <!-- Other pages: Search only -->
+      <button
+        id="search-trigger"
+        class="fixed top-4 right-16 z-50 p-2 hover:opacity-70 transition-opacity"
+        aria-label="Open search (Ctrl+K)"
+        title="Search (Ctrl+K)"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <path d="M21 21l-4.35-4.35"></path>
+        </svg>
+      </button>
+    )}
+    
+    <div class="min-h-screen flex flex-col">
+      <main class="flex-grow">
+        <slot />
+      </main>
+      <Footer siteName={siteName} />
+    </div>
+    
+    <!-- Search Modal (only on pages with search) -->
+    {!hideSearch && <SearchModal />}
+  </body>
+</html>

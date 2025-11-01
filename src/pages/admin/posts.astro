@@ -1,0 +1,274 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { formatDate } from '../../lib/utils';
+import { getCategories } from '../../lib/data';
+import { getAllBlogPosts } from '../../lib/posts';
+
+// Get all posts from both locations
+const allPosts = await getAllBlogPosts();
+const sortedPosts = allPosts.sort((a, b) =>
+  b.data.publishDate.valueOf() - a.data.publishDate.valueOf()
+);
+
+// Filter options from URL params
+const url = new URL(Astro.request.url);
+const filterStatus = url.searchParams.get('status') || 'all';
+const filterCategory = url.searchParams.get('category') || 'all';
+
+// Apply filters
+let filteredPosts = sortedPosts;
+if (filterStatus === 'published') {
+  filteredPosts = filteredPosts.filter(p => !p.data.draft);
+} else if (filterStatus === 'draft') {
+  filteredPosts = filteredPosts.filter(p => p.data.draft);
+}
+
+if (filterCategory !== 'all') {
+  filteredPosts = filteredPosts.filter(p => p.data.category === filterCategory);
+}
+
+// Get categories from JSON file
+const categoriesData = await getCategories();
+const categories = categoriesData.map(cat => cat.name);
+---
+
+<AdminLayout title="Manage Posts" activeNav="posts">
+  <div class="p-6 lg:p-8 h-full">
+    <!-- Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl lg:text-4xl font-display font-bold mb-1">POSTS</h1>
+      <p class="text-sm text-text-muted">Manage all your blog posts</p>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-3 gap-6 mb-8">
+      <div class="border-b border-border pb-3">
+        <div class="text-xs text-text-muted mb-1 uppercase tracking-wider">Total</div>
+        <div class="text-2xl font-display font-bold">{filteredPosts.length}</div>
+      </div>
+      <div class="border-b border-border pb-3">
+        <div class="text-xs text-text-muted mb-1 uppercase tracking-wider">Published</div>
+        <div class="text-2xl font-display font-bold">{filteredPosts.filter(p => !p.data.draft).length}</div>
+      </div>
+      <div class="border-b border-border pb-3">
+        <div class="text-xs text-text-muted mb-1 uppercase tracking-wider">Drafts</div>
+        <div class="text-2xl font-display font-bold">{filteredPosts.filter(p => p.data.draft).length}</div>
+      </div>
+    </div>
+
+    <!-- Filters & Actions -->
+    <div class="mb-6">
+      <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-border">
+        <a href="/admin/new" class="px-4 py-2 bg-text text-background rounded-full font-bold hover:bg-text/90 transition-all hover:scale-105">
+          NEW POST
+        </a>
+        <div class="flex flex-wrap gap-3">
+          <select
+            id="status-filter"
+            class="px-3 py-1.5 bg-background border border-border rounded text-sm focus:outline-none focus:border-text"
+          >
+            <option value="all" selected={filterStatus === 'all'}>All</option>
+            <option value="published" selected={filterStatus === 'published'}>Published</option>
+            <option value="draft" selected={filterStatus === 'draft'}>Drafts</option>
+          </select>
+          <select
+            id="category-filter"
+            class="px-3 py-1.5 bg-background border border-border rounded text-sm focus:outline-none focus:border-text"
+          >
+            <option value="all" selected={filterCategory === 'all'}>All Categories</option>
+            {categories.map(cat => (
+              <option value={cat} selected={filterCategory === cat}>{cat}</option>
+            ))}
+          </select>
+          <button
+            id="clear-filters"
+            class="px-3 py-1.5 border border-border rounded text-sm hover:bg-surface transition-colors"
+          >
+            Clear
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Posts List -->
+    <div class="space-y-0">
+      {filteredPosts.length > 0 ? (
+        filteredPosts.map((post, index) => (
+          <div class="flex items-center justify-between py-4 border-b border-border group hover:border-text transition-colors">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-3">
+                <span class="text-xl font-display font-bold text-text opacity-20">{String(index + 1).padStart(2, '0')}</span>
+                <div class="flex-1 min-w-0">
+                  <h3 class="font-bold text-base truncate group-hover:opacity-70 transition-opacity">{post.data.title}</h3>
+                  <div class="flex items-center gap-2 mt-1 text-xs text-text-muted">
+                    <span>{post.data.author}</span>
+                    <span>•</span>
+                    <span>{post.data.category}</span>
+                    <span>•</span>
+                    <span>{formatDate(post.data.publishDate)}</span>
+                    <span>•</span>
+                    {post.data.draft ? (
+                      <span class="px-2 py-0.5 bg-surface border border-border rounded text-xs">DRAFT</span>
+                    ) : (
+                      <span class="px-2 py-0.5 bg-text text-background rounded text-xs">PUB</span>
+                    )}
+                    {post.data.featured && (
+                      <>
+                        <span>•</span>
+                        <span class="px-2 py-0.5 border border-text rounded text-xs">FTD</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="flex gap-3 ml-4">
+              <a href={`/blog/${post.slug}`} target="_blank" class="text-xs hover:opacity-70 transition-opacity uppercase tracking-wider">
+                View
+              </a>
+              <a href={`/admin/edit/${post.slug}`} class="text-xs hover:opacity-70 transition-opacity uppercase tracking-wider">
+                Edit
+              </a>
+              <button
+                onclick={`deletePost('${post.slug}', '${post.data.title.replace(/'/g, "\\'")}')`}
+                class="text-xs hover:text-red-500 transition-colors uppercase tracking-wider"
+                type="button"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        ))
+      ) : (
+        <div class="py-12 text-center border-t border-border">
+          <p class="text-text-muted">No posts found with the selected filters.</p>
+        </div>
+      )}
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="delete-modal" class="fixed inset-0 bg-black/50 z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-surface rounded-xl p-6 max-w-md w-full border border-border">
+        <h3 class="text-xl font-bold mb-4">Delete Post</h3>
+        <p class="text-text-muted mb-6">
+          Are you sure you want to delete "<span id="delete-post-title"></span>"? This action cannot be undone.
+        </p>
+        <div class="flex gap-3 justify-end">
+          <button
+            onclick="closeDeleteModal()"
+            class="px-4 py-2 border border-border rounded hover:bg-background transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            id="confirm-delete-btn"
+            class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+          >
+            Delete Post
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Get filter elements
+    const statusFilter = document.getElementById('status-filter') as HTMLSelectElement;
+    const categoryFilter = document.getElementById('category-filter') as HTMLSelectElement;
+    const clearButton = document.getElementById('clear-filters');
+
+    // Function to update URL with filter parameters
+    function updateFilters() {
+      const status = statusFilter?.value || 'all';
+      const category = categoryFilter?.value || 'all';
+
+      const params = new URLSearchParams();
+      if (status !== 'all') params.set('status', status);
+      if (category !== 'all') params.set('category', category);
+
+      const queryString = params.toString();
+      const newUrl = queryString ? `/admin/posts?${queryString}` : '/admin/posts';
+
+      window.location.href = newUrl;
+    }
+
+    // Add event listeners
+    statusFilter?.addEventListener('change', updateFilters);
+    categoryFilter?.addEventListener('change', updateFilters);
+
+    clearButton?.addEventListener('click', () => {
+      window.location.href = '/admin/posts';
+    });
+
+    // Delete functionality
+    let deleteSlug = '';
+
+    window.deletePost = function(slug: string, title: string) {
+      deleteSlug = slug;
+      const modal = document.getElementById('delete-modal');
+      const titleSpan = document.getElementById('delete-post-title');
+
+      if (modal && titleSpan) {
+        titleSpan.textContent = title;
+        modal.classList.remove('hidden');
+      }
+    }
+
+    window.closeDeleteModal = function() {
+      const modal = document.getElementById('delete-modal');
+      if (modal) {
+        modal.classList.add('hidden');
+      }
+      deleteSlug = '';
+    }
+
+    // Confirm delete button
+    const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+    if (confirmDeleteBtn) {
+      confirmDeleteBtn.addEventListener('click', async () => {
+        if (!deleteSlug) return;
+
+        confirmDeleteBtn.textContent = 'Deleting...';
+        confirmDeleteBtn.setAttribute('disabled', 'true');
+
+        try {
+          const response = await fetch('/api/posts/delete', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ slug: deleteSlug })
+          });
+
+          const result = await response.json();
+
+          if (response.ok) {
+            // Reload the page to show updated list
+            window.location.reload();
+          } else {
+            alert('Failed to delete post: ' + (result.error || 'Unknown error'));
+            confirmDeleteBtn.textContent = 'Delete Post';
+            confirmDeleteBtn.removeAttribute('disabled');
+          }
+        } catch (error) {
+          console.error('Error deleting post:', error);
+          alert('Failed to delete post. Please try again.');
+          confirmDeleteBtn.textContent = 'Delete Post';
+          confirmDeleteBtn.removeAttribute('disabled');
+        }
+      });
+    }
+
+    // Close modal when clicking outside
+    const deleteModal = document.getElementById('delete-modal');
+    if (deleteModal) {
+      deleteModal.addEventListener('click', (e) => {
+        if (e.target === deleteModal) {
+          closeDeleteModal();
+        }
+      });
+    }
+  </script>
+</AdminLayout>

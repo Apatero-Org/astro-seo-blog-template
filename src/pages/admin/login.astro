@@ -1,0 +1,91 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+// If already logged in, redirect to admin
+const sessionToken = Astro.cookies.get('admin-session');
+if (sessionToken?.value === 'authenticated') {
+  return Astro.redirect('/admin');
+}
+
+let error = '';
+if (Astro.request.method === 'POST') {
+  const formData = await Astro.request.formData();
+  const email = formData.get('email')?.toString();
+  const password = formData.get('password')?.toString();
+  
+  const ADMIN_EMAIL = import.meta.env.ADMIN_EMAIL;
+  const ADMIN_PASS = import.meta.env.ADMIN_PASS;
+  
+  // If no credentials in env, deny access
+  if (!ADMIN_EMAIL || !ADMIN_PASS) {
+    error = 'Admin access not configured';
+  } else if (email === ADMIN_EMAIL && password === ADMIN_PASS) {
+    // Set session cookie
+    Astro.cookies.set('admin-session', 'authenticated', {
+      path: '/',
+      httpOnly: true,
+      secure: import.meta.env.PROD,
+      sameSite: 'strict',
+      maxAge: 60 * 60 * 24 * 7 // 7 days
+    });
+    return Astro.redirect('/admin');
+  } else {
+    error = 'Invalid email or password';
+  }
+}
+---
+
+<BaseLayout title="Admin Login">
+  <div class="min-h-screen flex items-center justify-center py-12">
+    <div class="max-w-md w-full">
+      <div class="border border-border rounded-lg p-8">
+        <h1 class="text-2xl font-bold mb-6 text-center">Admin Login</h1>
+        
+        {error && (
+          <div class="mb-4 p-3 bg-surface border border-border rounded text-sm text-text-muted">
+            {error}
+          </div>
+        )}
+        
+        <form method="POST">
+          <div class="mb-4">
+            <label for="email" class="label">Email</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              required
+              class="input"
+              placeholder="Enter your email"
+            />
+          </div>
+          
+          <div class="mb-6">
+            <label for="password" class="label">Password</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              required
+              class="input"
+              placeholder="Enter your password"
+            />
+          </div>
+          
+          <button
+            type="submit"
+            class="w-full px-4 py-2 bg-text text-background rounded-full hover:opacity-90 transition-opacity font-medium"
+          >
+            Sign In
+          </button>
+        </form>
+        
+        <div class="mt-6 text-center">
+          <a href="/" class="text-sm text-text-muted hover:text-text transition-colors">
+            ← Back to Blog
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>

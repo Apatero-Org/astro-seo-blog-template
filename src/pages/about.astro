@@ -1,0 +1,148 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="About - Astro SEO Blog Template"
+  description="Learn about the Astro SEO Blog Template - a modern, open-source blogging platform built with Astro. Created by Kevin Gabeci at Apatero."
+  breadcrumb={[
+    { name: 'Home', url: '/' },
+    { name: 'About', url: '/about' }
+  ]}
+>
+  <div class="container py-24 lg:py-32">
+    <div class="max-w-5xl mx-auto">
+      <!-- Header -->
+      <div class="mb-20">
+        <h1 class="text-5xl lg:text-7xl font-display font-bold mb-6 leading-tight">
+          ABOUT THIS<br>
+          <span class="text-text-muted">TEMPLATE</span>
+        </h1>
+        <p class="text-xl lg:text-2xl text-text-muted max-w-3xl">
+          A modern, feature-rich, and SEO-optimized blog template built with Astro. Perfect for developers and content creators.
+        </p>
+      </div>
+
+      <!-- Mission Section -->
+      <div class="mb-24 pb-16 border-b border-border">
+        <h2 class="text-3xl lg:text-4xl font-display font-bold mb-8">OUR MISSION</h2>
+        <p class="text-lg lg:text-xl text-text-muted mb-6 leading-relaxed">
+          This template exists to make professional blogging accessible to everyone. We believe that setting up a blog shouldn't require hours of configuration or compromise on features like SEO, performance, or design.
+        </p>
+        <p class="text-lg lg:text-xl text-text-muted leading-relaxed">
+          Built with modern web technologies and best practices, this template gives you everything you need to start blogging immediately while maintaining complete control over customization.
+        </p>
+      </div>
+
+      <!-- Features -->
+      <div class="mb-24 pb-16 border-b border-border">
+        <h2 class="text-3xl lg:text-4xl font-display font-bold mb-12">WHAT'S INCLUDED</h2>
+        <div class="grid md:grid-cols-2 gap-x-16 gap-y-8">
+          <div>
+            <h3 class="text-xl lg:text-2xl font-display font-bold mb-6">CORE FEATURES</h3>
+            <div class="space-y-4 text-lg text-text-muted">
+              <div>→ SEO optimized with meta tags and sitemap</div>
+              <div>→ Dark mode support with theme persistence</div>
+              <div>→ Full-text search functionality</div>
+              <div>→ RSS feed generation</div>
+              <div>→ Category and tag organization</div>
+              <div>→ MDX support for rich content</div>
+              <div>→ Custom CMS with no database</div>
+            </div>
+          </div>
+
+          <div>
+            <h3 class="text-xl lg:text-2xl font-display font-bold mb-6">DEVELOPER EXPERIENCE</h3>
+            <div class="space-y-4 text-lg text-text-muted">
+              <div>→ Built with Astro 5 and TypeScript</div>
+              <div>→ Styled with Tailwind CSS</div>
+              <div>→ Multi-language ready (i18n)</div>
+              <div>→ Responsive and mobile-first design</div>
+              <div>→ Clean, well-documented code</div>
+              <div>→ Easy deployment to any platform</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tech Stack -->
+      <div class="mb-24 pb-16 border-b border-border">
+        <h2 class="text-3xl lg:text-4xl font-display font-bold mb-12">BUILT WITH</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+          <div class="group">
+            <div class="text-3xl lg:text-4xl font-display font-bold mb-2 group-hover:scale-110 transition-transform">ASTRO</div>
+            <div class="text-sm text-text-muted uppercase tracking-wider">Framework</div>
+          </div>
+          <div class="group">
+            <div class="text-3xl lg:text-4xl font-display font-bold mb-2 group-hover:scale-110 transition-transform">TS</div>
+            <div class="text-sm text-text-muted uppercase tracking-wider">Type Safety</div>
+          </div>
+          <div class="group">
+            <div class="text-3xl lg:text-4xl font-display font-bold mb-2 group-hover:scale-110 transition-transform">TAILWIND</div>
+            <div class="text-sm text-text-muted uppercase tracking-wider">Styling</div>
+          </div>
+          <div class="group">
+            <div class="text-3xl lg:text-4xl font-display font-bold mb-2 group-hover:scale-110 transition-transform">MDX</div>
+            <div class="text-sm text-text-muted uppercase tracking-wider">Content</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Creator -->
+      <div class="mb-24">
+        <h2 class="text-3xl lg:text-4xl font-display font-bold mb-8">CREATED BY</h2>
+        <p class="text-lg lg:text-xl text-text-muted mb-6 leading-relaxed">
+          This template was created by <a href="https://kevingabeci.com" target="_blank" class="text-text hover:opacity-70 transition-opacity font-bold">Kevin Gabeci</a>, a developer and content creator passionate about building tools that help others succeed.
+        </p>
+        <p class="text-lg lg:text-xl text-text-muted mb-8 leading-relaxed">
+          Part of the <a href="https://apatero.com" target="_blank" class="text-text hover:opacity-70 transition-opacity font-bold">Apatero</a> family of projects - building innovative solutions for creators and developers.
+        </p>
+        <div class="flex flex-wrap gap-4">
+          <a href="https://github.com/Apatero-Org/astro-seo-blog-template" target="_blank" class="px-8 py-4 border-2 border-text rounded-full font-bold text-lg hover:bg-text hover:text-background transition-all hover:scale-105 inline-flex items-center gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+            </svg>
+            GITHUB
+          </a>
+          <a href="https://apatero.com" target="_blank" class="px-8 py-4 border-2 border-text rounded-full font-bold text-lg hover:bg-text hover:text-background transition-all hover:scale-105 inline-flex items-center gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="2" y1="12" x2="22" y2="12"></line>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+            </svg>
+            APATERO
+          </a>
+        </div>
+      </div>
+
+      <!-- Open Source -->
+      <div class="text-center pt-16 border-t border-border">
+        <h3 class="text-2xl lg:text-3xl font-display font-bold mb-4">OPEN SOURCE & FREE</h3>
+        <p class="text-lg text-text-muted max-w-2xl mx-auto">
+          This template is released under the MIT License. Use it for personal projects, commercial work, or as a starting point for your own creations.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Organization Schema -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Astro SEO Blog Template",
+      "url": "https://yourdomain.com",
+      "description": "A modern, SEO-optimized blog template built with Astro",
+      "author": {
+        "@type": "Person",
+        "name": "Kevin Gabeci",
+        "url": "https://kevingabeci.com"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Apatero",
+        "url": "https://apatero.com"
+      }
+    }
+  </script>
+</BaseLayout>

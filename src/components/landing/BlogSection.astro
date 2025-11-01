@@ -1,0 +1,67 @@
+---
+import { getPublishedBlogPosts } from '../../lib/posts';
+import { formatDate } from '../../lib/utils';
+import { normalizeTagName } from '../../lib/tags';
+
+// Get the 3 latest blog posts
+const allPosts = await getPublishedBlogPosts();
+const latestPosts = allPosts.slice(0, 3);
+---
+
+<section class="bg-surface py-24 lg:py-32">
+  <div class="container max-w-6xl">
+    <div class="mb-20">
+      <h2 class="text-4xl lg:text-6xl font-display font-bold mb-6 leading-tight">
+        LATEST POSTS
+      </h2>
+      <p class="text-xl lg:text-2xl text-text-muted">
+        Read our latest articles and tutorials
+      </p>
+    </div>
+
+    <div class="space-y-8">
+      {latestPosts.map((post, index) => (
+        <a href={`/blog/${post.slug}`} class="block group">
+          <div class="flex flex-col md:flex-row gap-8 pb-8 border-b border-border group-hover:border-text transition-colors">
+            {post.data.heroImage && (
+              <div class="md:w-1/3 aspect-video overflow-hidden">
+                <img
+                  src={post.data.heroImage}
+                  alt={post.data.heroImageAlt || `${post.data.title} - ${post.data.category} tutorial`}
+                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  loading="lazy"
+                />
+              </div>
+            )}
+            <div class="flex-1 flex flex-col justify-center">
+              <div class="text-sm text-text-muted mb-3 uppercase tracking-wider">
+                {post.data.category} • {formatDate(post.data.publishDate)}
+                {post.data.featured && (
+                  <span class="ml-3 px-3 py-1 bg-text text-background text-xs rounded-full">FEATURED</span>
+                )}
+              </div>
+              <h3 class="text-2xl lg:text-3xl font-display font-bold mb-3 group-hover:opacity-70 transition-opacity">
+                {post.data.title}
+              </h3>
+              <p class="text-lg text-text-muted">
+                {post.data.description}
+              </p>
+            </div>
+          </div>
+        </a>
+      ))}
+    </div>
+
+    <div class="mt-16 text-center">
+      <a
+        href="/blog"
+        class="inline-flex items-center gap-3 px-10 py-5 bg-text text-background rounded-full font-bold text-lg hover:bg-text/90 hover:scale-105 transition-all"
+      >
+        VIEW ALL POSTS
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 10H16M16 10L11 5M16 10L11 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
+    </div>
+  </div>
+</section>

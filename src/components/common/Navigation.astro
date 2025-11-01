@@ -1,0 +1,24 @@
+---
+import { SITE_CONFIG } from '../../data/site-config';
+
+export interface Props {
+  currentPath: string;
+}
+
+const { currentPath } = Astro.props;
+---
+
+<nav class="hidden md:flex items-center space-x-6">
+  {SITE_CONFIG.navItems.map((item) => (
+    <a
+      href={item.href}
+      class={`text-sm font-medium transition-colors hover:text-text ${
+        currentPath === item.href
+          ? 'text-text'
+          : 'text-text-muted'
+      }`}
+    >
+      {item.label}
+    </a>
+  ))}
+</nav>

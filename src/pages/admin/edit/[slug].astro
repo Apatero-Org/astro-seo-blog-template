@@ -1,0 +1,1085 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import ImagePicker from '../../../components/admin/ImagePicker.astro';
+import { getAuthors } from '../../../lib/authors';
+import { getCategories } from '../../../lib/data';
+import { getBlogPost } from '../../../lib/posts';
+import fs from 'fs/promises';
+import path from 'path';
+
+const { slug } = Astro.params;
+const post = await getBlogPost(slug);
+
+if (!post) {
+  return Astro.redirect('/admin');
+}
+
+// Get all authors and categories
+const authors = await getAuthors();
+const categoriesData = await getCategories();
+
+if (Astro.request.method === 'POST') {
+  try {
+    const formData = await Astro.request.formData();
+    const title = formData.get('title')?.toString() || '';
+    const description = formData.get('description')?.toString() || '';
+    const category = formData.get('category')?.toString() || '';
+    const tags = formData.get('tags')?.toString()?.split(',').map(t => t.trim()) || [];
+    const author = formData.get('author')?.toString() || 'default';
+    const draft = formData.get('draft') === 'on';
+    const featured = formData.get('featured') === 'on';
+    const heroImage = formData.get('heroImage')?.toString() || '';
+    const content = formData.get('content')?.toString() || '';
+    const seoTitle = formData.get('seoTitle')?.toString() || title;
+    const seoDescription = formData.get('seoDescription')?.toString() || description;
+    const seoKeywords = formData.get('seoKeywords')?.toString() || '';
+    const noindex = formData.get('noindex') === 'on';
+    const nofollow = formData.get('nofollow') === 'on';
+    const canonicalUrl = formData.get('canonicalUrl')?.toString() || '';
+    const ogImage = formData.get('ogImage')?.toString() || heroImage;
+    const ogTitle = formData.get('ogTitle')?.toString() || seoTitle;
+    const ogDescription = formData.get('ogDescription')?.toString() || seoDescription;
+    
+    // Build the frontmatter - ALWAYS include all fields
+    const frontmatter = `---
+title: "${title}"
+description: "${description}"
+publishDate: ${post.data.publishDate.toISOString()}
+updateDate: ${new Date().toISOString()}
+author: "${author}"
+category: "${category}"
+tags: ${JSON.stringify(tags)}
+featured: ${featured}
+draft: ${draft}
+heroImage: "${heroImage}"
+seoTitle: "${seoTitle}"
+seoDescription: "${seoDescription}"
+seoKeywords: "${seoKeywords}"
+noindex: ${noindex}
+nofollow: ${nofollow}
+canonicalUrl: "${canonicalUrl}"
+ogTitle: "${ogTitle}"
+ogDescription: "${ogDescription}"
+ogImage: "${ogImage}"
+---
+
+${content}`;
+
+    // Save to both locations for compatibility
+    // 1. Save to new location: public/data/posts/
+    const postsDir = path.join(process.cwd(), 'public', 'data', 'posts');
+    await fs.mkdir(postsDir, { recursive: true });
+    const newFilePath = path.join(postsDir, `${slug}.mdx`);
+    await fs.writeFile(newFilePath, frontmatter, 'utf-8');
+    
+    // 2. Also save to old location for backward compatibility
+    const oldFilePath = path.join(process.cwd(), 'src', 'content', 'blog', `${slug}.mdx`);
+    await fs.writeFile(oldFilePath, frontmatter, 'utf-8');
+  } catch (e) {
+    console.error('Failed to update post:', e);
+  }
+}
+
+// Read the raw content and parse frontmatter manually for all fields
+// Try new location first, then old location
+let filePath = path.join(process.cwd(), 'public', 'data', 'posts', `${slug}.mdx`);
+let rawContent: string;
+try {
+  rawContent = await fs.readFile(filePath, 'utf-8');
+} catch {
+  // Try old location
+  filePath = path.join(process.cwd(), 'src', 'content', 'blog', `${slug}.mdx`);
+  try {
+    rawContent = await fs.readFile(filePath, 'utf-8');
+  } catch {
+    // If both fail, use the post body from the posts utility
+    rawContent = `---\n---\n${post.body}`;
+  }
+}
+const contentMatch = rawContent.match(/---\n([\s\S]*?)\n---\n([\s\S]*)/);
+const frontmatterRaw = contentMatch ? contentMatch[1] : '';
+const actualContent = contentMatch ? contentMatch[2] : '';
+
+// Parse additional SEO fields from raw frontmatter that might not be in the schema
+const parseFrontmatterField = (key: string): string => {
+  const regex = new RegExp(`^${key}:\\s*["']?(.*)["']?$`, 'mi');
+  const match = frontmatterRaw.match(regex);
+  return match ? match[1].replace(/^["']|["']$/g, '') : '';
+};
+
+// Get SEO fields that might not be in the content collection schema
+const seoKeywords = parseFrontmatterField('seoKeywords');
+const canonicalUrl = parseFrontmatterField('canonicalUrl');
+const nofollow = parseFrontmatterField('nofollow') === 'true';
+const ogTitle = parseFrontmatterField('ogTitle');
+const ogDescription = parseFrontmatterField('ogDescription');
+const ogImage = parseFrontmatterField('ogImage');
+---
+
+<AdminLayout title={`Edit: ${post.data.title}`} activeNav="posts">
+  <div class="p-8 flex flex-col flex-1 min-h-full">
+    <!-- WordPress-style Layout -->
+    <form method="POST" class="grid grid-cols-1 lg:grid-cols-[1fr,320px] gap-6 flex-1 min-h-0">
+      <!-- Main Content Area -->
+      <div class="flex flex-col min-h-0">
+        <!-- Title Block -->
+        <div class="">
+          <textarea
+            id="title"
+            name="title"
+            required
+            placeholder="Enter title here..."
+            class="w-full text-4xl font-bold bg-transparent border-0 outline-none focus:ring-0 placeholder-text-muted/30 px-0 mb-6 resize-none overflow-hidden"
+            rows="1"
+            oninput="this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px'"
+          >{post.data.title}</textarea>
+        </div>
+        
+        <!-- Content Editor Block -->
+        <div class="flex-1 min-h-0 flex flex-col">
+          <div class="relative flex-1 flex flex-col">
+            <textarea
+              id="content"
+              name="content"
+              required
+              placeholder="Write your post content here... (Markdown/MDX supported)"
+              class="w-full bg-transparent border-0 outline-none font-mono text-sm placeholder-text-muted/30 px-0 resize-none flex-1"
+              style="overflow-y: auto;"
+              oninput="window.autoExpandTextarea(this)"
+              ondblclick="window.openImagePicker('content', 'content')"
+            >{actualContent}</textarea>
+          </div>
+          
+          <div id="preview" class="hidden w-full prose prose-invert max-w-none mt-4"></div>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="space-y-6">
+        <!-- Publish & Featured Image Box -->
+        <div class="bg-surface rounded-xl shadow-lg overflow-hidden">
+          <div class="p-4 border-b border-border/50">
+            <h3 class="font-semibold">Publish Settings</h3>
+          </div>
+          <div class="p-4 space-y-4">
+            <!-- Excerpt -->
+            <div>
+              <label class="text-sm font-medium block mb-2">Excerpt</label>
+              <textarea
+                id="description"
+                name="description"
+                rows="2"
+                required
+                placeholder="Short description..."
+                class="w-full bg-background/50 border border-border/50 rounded-lg px-3 py-2 text-sm"
+              >{post.data.description}</textarea>
+            </div>
+            
+            <div class="border-t border-border/50 pt-4">
+              <div class="flex items-center justify-between text-sm mb-2">
+                <span class="text-text-muted">Status:</span>
+                <span class="font-medium">{post.data.draft ? 'Draft' : 'Published'}</span>
+              </div>
+              <div class="flex items-center justify-between text-sm mb-4">
+                <span class="text-text-muted">Published on:</span>
+                <span class="font-medium">{new Date(post.data.publishDate).toLocaleDateString()}</span>
+              </div>
+              
+              <div class="space-y-3">
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="draft"
+                    checked={post.data.draft}
+                    class="rounded border-border"
+                  />
+                  <span class="text-sm">Save as Draft</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="featured"
+                    checked={post.data.featured}
+                    class="rounded border-border"
+                  />
+                  <span class="text-sm">Featured Post</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+            
+        <!-- Featured Image Box -->
+        <div class="bg-surface rounded-xl shadow-lg overflow-hidden">
+          <div class="p-4 border-b border-border/50">
+            <h3 class="font-semibold">Featured Image</h3>
+          </div>
+          <div class="p-4">
+              <div id="heroImagePreview">
+                {post.data.heroImage ? (
+                  <div class="relative group">
+                    <img 
+                      id="heroImageDisplay"
+                      src={post.data.heroImage} 
+                      alt="Featured image" 
+                      class="w-full aspect-video object-cover rounded-lg" 
+                    />
+                    <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                      <button
+                        type="button"
+                        onclick="window.openImagePicker('heroImage', 'hero')"
+                        class="px-3 py-1.5 bg-white text-black rounded text-sm font-medium"
+                      >
+                        Change Image
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    id="heroImageButton"
+                    type="button"
+                    onclick="window.openImagePicker('heroImage', 'hero')"
+                    class="w-full aspect-video border-2 border-dashed border-border/50 rounded-lg hover:border-text transition-colors flex flex-col items-center justify-center bg-background/50">
+                    <svg class="w-6 h-6 mb-1 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                    <span class="text-xs text-text-muted">Set featured image</span>
+                  </button>
+                )}
+              </div>
+            <input
+              type="hidden"
+              id="heroImage"
+              name="heroImage"
+              value={post.data.heroImage || ''}
+            />
+          </div>
+        </div>
+
+        <!-- Categories & Tags -->
+        <div class="bg-surface rounded-xl shadow-lg overflow-hidden">
+          <div class="p-4 border-b border-border/50">
+            <h3 class="font-semibold">Categories & Tags</h3>
+          </div>
+          <div class="p-4 space-y-4">
+            <div>
+              <label class="text-sm font-medium block mb-2">Category</label>
+              <select id="category" name="category" class="w-full bg-background/50 border border-border/50 rounded-lg px-3 py-2 text-sm" required>
+                {categoriesData.map(cat => (
+                  <option value={cat.name} selected={post.data.category === cat.name}>{cat.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label class="text-sm font-medium block mb-2">Author</label>
+              <select id="author" name="author" class="w-full bg-background/50 border border-border/50 rounded-lg px-3 py-2 text-sm" required>
+                {authors.map(author => (
+                  <option value={author.id} selected={post.data.author === author.id}>{author.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label class="text-sm font-medium block mb-2">Tags</label>
+              <input
+                type="text"
+                id="tags"
+                name="tags"
+                value={(post.data.tags || []).join(', ')}
+                class="w-full bg-background/50 border border-border/50 rounded-lg px-3 py-2 text-sm"
+                placeholder="Separate with commas"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- SEO Settings -->
+        <div class="bg-surface rounded-xl shadow-lg overflow-hidden">
+          <div class="p-4 border-b border-border/50 flex items-center justify-between">
+            <h3 class="font-semibold">SEO Settings</h3>
+            <button
+              type="button"
+              onclick="analyzeSEO()"
+              class="px-3 py-1 bg-text text-background rounded text-xs font-medium hover:opacity-90 transition-opacity"
+            >
+              Analyze SEO
+            </button>
+          </div>
+          <div class="p-4 space-y-4">
+            <!-- SEO Score Display -->
+            <div id="seo-score" class="hidden">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-sm font-medium">SEO Score</span>
+                <span id="seo-score-value" class="text-sm font-bold"></span>
+              </div>
+              <div class="w-full bg-background/50 rounded-full h-2 mb-3">
+                <div id="seo-score-bar" class="h-2 rounded-full transition-all duration-300"></div>
+              </div>
+              <div id="seo-suggestions" class="space-y-2 text-xs"></div>
+              <div class="border-t border-border/50 mt-3 pt-3">
+                <div class="space-y-2">
+                  <div class="flex items-center justify-between text-xs">
+                    <span class="text-text-muted">Keywords:</span>
+                    <span id="keyword-count">-</span>
+                  </div>
+                  <div class="flex items-center justify-between text-xs">
+                    <span class="text-text-muted">Readability:</span>
+                    <span id="readability-score">-</span>
+                  </div>
+                  <div class="flex items-center justify-between text-xs">
+                    <span class="text-text-muted">Word Count:</span>
+                    <span id="word-count">-</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div>
+              <label class="text-sm font-medium block mb-2">Focus Keywords</label>
+              <input
+                type="text"
+                id="seo-keywords"
+                name="seoKeywords"
+                class="w-full bg-background/50 border border-border/50 rounded-lg px-3 py-2 text-sm"
+                placeholder="Enter focus keywords (comma separated)"
+                value={seoKeywords || ''}
+              />
+            </div>
+            
+            <div>
+              <label class="text-sm font-medium block mb-2">SEO Title</label>
+              <input
+                type="text"
+                id="seo-title"
+                name="seoTitle"
+                value={post.data.seoTitle || post.data.title}
+                class="w-full bg-background/50 border border-border/50 rounded-lg px-3 py-2 text-sm"
+                placeholder="Leave empty to use post title"
+                oninput="updateCharCount('seo-title', 'title-count', 60)"
+              />
+              <p class="text-xs text-text-muted mt-1">Title for search engines (<span id="title-count">0</span>/60 chars)</p>
+            </div>
+            <div>
+              <label class="text-sm font-medium block mb-2">SEO Description</label>
+              <textarea
+                id="seo-desc"
+                name="seoDescription"
+                rows="2"
+                class="w-full bg-background/50 border border-border/50 rounded-lg px-3 py-2 text-sm"
+                placeholder="Leave empty to use post description"
+                oninput="updateCharCount('seo-desc', 'desc-count', 160)"
+              >{post.data.seoDescription || post.data.description}</textarea>
+              <p class="text-xs text-text-muted mt-1">Meta description (<span id="desc-count">0</span>/160 chars)</p>
+            </div>
+            
+            <div class="border-t border-border/50 pt-3">
+              <h4 class="text-xs font-semibold mb-3 text-text-muted">Advanced SEO</h4>
+              
+              <div class="space-y-3">
+                <div>
+                  <label class="text-xs font-medium block mb-1">Canonical URL</label>
+                  <input
+                    type="url"
+                    name="canonicalUrl"
+                    value={post.data.canonicalUrl || ''}
+                    class="w-full bg-background/50 border border-border/50 rounded-lg px-2 py-1.5 text-xs"
+                    placeholder="Leave empty for default"
+                  />
+                  <p class="text-[10px] text-text-muted mt-1">Override the canonical URL if needed</p>
+                </div>
+                
+                <div class="flex gap-3">
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="noindex"
+                      checked={post.data.noindex || false}
+                      class="rounded border-border text-xs"
+                    />
+                    <span class="text-xs">Noindex</span>
+                  </label>
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="nofollow"
+                      checked={post.data.nofollow || false}
+                      class="rounded border-border text-xs"
+                    />
+                    <span class="text-xs">Nofollow</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+            
+            <div class="border-t border-border/50 pt-3">
+              <h4 class="text-xs font-semibold mb-3 text-text-muted">Open Graph (Social Media)</h4>
+              
+              <div class="space-y-3">
+                <div>
+                  <label class="text-xs font-medium block mb-1">OG Title</label>
+                  <input
+                    type="text"
+                    name="ogTitle"
+                    value={ogTitle || ''}
+                    class="w-full bg-background/50 border border-border/50 rounded-lg px-2 py-1.5 text-xs"
+                    placeholder="Uses SEO title if empty"
+                  />
+                </div>
+                
+                <div>
+                  <label class="text-xs font-medium block mb-1">OG Description</label>
+                  <textarea
+                    name="ogDescription"
+                    rows="2"
+                    class="w-full bg-background/50 border border-border/50 rounded-lg px-2 py-1.5 text-xs"
+                    placeholder="Uses SEO description if empty"
+                  >{ogDescription || ''}</textarea>
+                </div>
+                
+                <div>
+                  <label class="text-xs font-medium block mb-1">OG Image</label>
+                  <input
+                    type="text"
+                    name="ogImage"
+                    value={ogImage || ''}
+                    class="w-full bg-background/50 border border-border/50 rounded-lg px-2 py-1.5 text-xs"
+                    placeholder="Uses featured image if empty"
+                  />
+                  <p class="text-[10px] text-text-muted mt-1">1200x630px recommended for social sharing</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Update Button -->
+        <div class="bg-surface rounded-xl shadow-lg p-4">
+          <button
+            type="submit"
+            class="w-full px-4 py-3 bg-text text-background rounded-lg hover:opacity-90 transition-opacity font-medium"
+          >
+            Update Post
+          </button>
+          <div class="flex gap-3 mt-3">
+            <a
+              href={`/blog/${slug}`}
+              target="_blank"
+              class="flex-1 px-4 py-2 border border-border/50 rounded-lg hover:bg-background/50 transition-colors text-center text-sm"
+            >
+              Preview
+            </a>
+            <a
+              href="/admin/posts"
+              class="flex-1 px-4 py-2 border border-border/50 rounded-lg hover:bg-background/50 transition-colors text-center text-sm"
+            >
+              Back to Posts
+            </a>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+  <ImagePicker />
+  
+  <script>
+    // Make functions globally available
+    window.autoExpandTextarea = function(textarea) {
+      // Set minimum height to fill the viewport
+      const minHeight = window.innerHeight - textarea.getBoundingClientRect().top - 100;
+      textarea.style.height = 'auto';
+      const scrollHeight = textarea.scrollHeight;
+      textarea.style.height = Math.max(scrollHeight, minHeight) + 'px';
+    }
+    
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initialize character counts
+      window.updateCharCount('seo-title', 'title-count', 60);
+      window.updateCharCount('seo-desc', 'desc-count', 160);
+      
+      // Auto-expand title on load
+      const titleTextarea = document.getElementById('title');
+      if (titleTextarea) {
+        titleTextarea.style.height = 'auto';
+        titleTextarea.style.height = titleTextarea.scrollHeight + 'px';
+      }
+      
+      // Auto-expand content on load
+      const contentTextarea = document.getElementById('content');
+      if (contentTextarea) {
+        window.autoExpandTextarea(contentTextarea);
+      }
+      
+      // Watch for changes to heroImage input and update preview
+      const heroImageInput = document.getElementById('heroImage');
+      if (heroImageInput) {
+        // Create MutationObserver to watch for value changes
+        const observer = new MutationObserver(() => {
+          updateHeroImagePreview(heroImageInput.value);
+        });
+        
+        // Also watch for direct value changes
+        Object.defineProperty(heroImageInput, 'value', {
+          get() {
+            return this.getAttribute('value') || '';
+          },
+          set(newValue) {
+            this.setAttribute('value', newValue);
+            updateHeroImagePreview(newValue);
+          }
+        });
+      }
+    });
+    
+    function updateHeroImagePreview(imageUrl) {
+      const previewContainer = document.getElementById('heroImagePreview');
+      if (!previewContainer) return;
+      
+      if (imageUrl) {
+        previewContainer.innerHTML = `
+          <div class="relative group">
+            <img 
+              id="heroImageDisplay"
+              src="${imageUrl}" 
+              alt="Featured image" 
+              class="w-full aspect-video object-cover rounded-lg" 
+            />
+            <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+              <button
+                type="button"
+                onclick="window.openImagePicker('heroImage', 'hero')"
+                class="px-3 py-1.5 bg-white text-black rounded text-sm font-medium"
+              >
+                Change Image
+              </button>
+            </div>
+          </div>
+        `;
+      } else {
+        previewContainer.innerHTML = `
+          <button
+            id="heroImageButton"
+            type="button"
+            onclick="window.openImagePicker('heroImage', 'hero')"
+            class="w-full aspect-video border-2 border-dashed border-border/50 rounded-lg hover:border-text transition-colors flex flex-col items-center justify-center bg-background/50">
+            <svg class="w-6 h-6 mb-1 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+            </svg>
+            <span class="text-xs text-text-muted">Set featured image</span>
+          </button>
+        `;
+      }
+    }
+    
+    // Make it globally available
+    window.updateHeroImagePreview = updateHeroImagePreview;
+    
+    
+    window.togglePreview = function() {
+      const content = document.getElementById('content') as HTMLTextAreaElement;
+      const preview = document.getElementById('preview');
+      
+      if (preview && content) {
+        if (preview.classList.contains('hidden')) {
+          // Show preview
+          let html = content.value;
+          
+          // Convert markdown to HTML
+          // Headers
+          html = html.replace(/^#### (.*$)/gim, '<h4 class="text-lg font-semibold mt-4 mb-2">$1</h4>');
+          html = html.replace(/^### (.*$)/gim, '<h3 class="text-xl font-semibold mt-4 mb-2">$1</h3>');
+          html = html.replace(/^## (.*$)/gim, '<h2 class="text-2xl font-bold mt-6 mb-3">$1</h2>');
+          html = html.replace(/^# (.*$)/gim, '<h1 class="text-3xl font-bold mt-6 mb-3">$1</h1>');
+          
+          // Lists
+          html = html.replace(/^\* (.+)$/gim, '<li>$1</li>');
+          html = html.replace(/(<li>.*<\/li>)/s, '<ul class="list-disc pl-6 my-4">$1</ul>');
+          
+          // Bold and italic
+          html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+          html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+          html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+          
+          // Images
+          html = html.replace(/!\[([^\]]*)\]\(([^\)]*)\)/g, '<img src="$2" alt="$1" class="rounded-lg my-4 max-w-full" />');
+          
+          // Links
+          html = html.replace(/\[([^\]]*)\]\(([^\)]*)\)/g, '<a href="$2" class="text-blue-500 hover:underline">$1</a>');
+          
+          // Code blocks
+          html = html.replace(/```([\s\S]*?)```/g, '<pre class="bg-surface p-4 rounded-lg my-4 overflow-x-auto"><code>$1</code></pre>');
+          html = html.replace(/`([^`]+)`/g, '<code class="bg-surface px-1 py-0.5 rounded">$1</code>');
+          
+          // Paragraphs
+          html = html.split('\n\n').map(p => p.trim() ? `<p class="mb-4">${p}</p>` : '').join('');
+          
+          preview.innerHTML = html;
+          preview.classList.remove('hidden');
+          content.classList.add('hidden');
+        } else {
+          // Hide preview
+          preview.classList.add('hidden');
+          content.classList.remove('hidden');
+        }
+      }
+    }
+    
+    // Update character count
+    window.updateCharCount = function(inputId, countId, maxChars) {
+      const input = document.getElementById(inputId) as HTMLInputElement | HTMLTextAreaElement;
+      const countEl = document.getElementById(countId);
+      if (input && countEl) {
+        const count = input.value.length;
+        countEl.textContent = count.toString();
+        if (count > maxChars) {
+          countEl.classList.add('text-red-500');
+        } else {
+          countEl.classList.remove('text-red-500');
+        }
+      }
+    }
+    
+    // Advanced SEO Analysis
+    window.analyzeSEO = function() {
+      const title = (document.getElementById('title') as HTMLInputElement)?.value || '';
+      const content = (document.getElementById('content') as HTMLTextAreaElement)?.value || '';
+      const seoTitle = (document.getElementById('seo-title') as HTMLInputElement)?.value || title;
+      const seoDesc = (document.getElementById('seo-desc') as HTMLTextAreaElement)?.value || '';
+      const keywords = (document.getElementById('seo-keywords') as HTMLInputElement)?.value || '';
+      
+      // Initialize analysis metrics
+      const analysis = {
+        overall: 0,
+        title: { score: 0, max: 20, issues: [] },
+        description: { score: 0, max: 20, issues: [] },
+        content: { score: 0, max: 25, issues: [] },
+        keywords: { score: 0, max: 20, issues: [] },
+        readability: { score: 0, max: 15, issues: [] }
+      };
+      
+      // Detailed content analysis
+      const words = content.split(/\s+/).filter(w => w.length > 0);
+      const wordCount = words.length;
+      const sentences = content.split(/[.!?]+/).filter(s => s.trim().length > 0);
+      const paragraphs = content.split(/\n\n+/).filter(p => p.trim().length > 0);
+      const avgWordsPerSentence = sentences.length > 0 ? Math.round(wordCount / sentences.length) : 0;
+      const avgSentencesPerParagraph = paragraphs.length > 0 ? Math.round(sentences.length / paragraphs.length) : 0;
+      
+      // Calculate reading time
+      const readingTime = Math.ceil(wordCount / 200); // Average reading speed
+      
+      // Analyze headings
+      const h1Count = (content.match(/^# /gm) || []).length;
+      const h2Count = (content.match(/^## /gm) || []).length;
+      const h3Count = (content.match(/^### /gm) || []).length;
+      const totalHeadings = h1Count + h2Count + h3Count;
+      
+      // Analyze links
+      const internalLinks = (content.match(/\[([^\]]*)\]\(\/[^)]*\)/g) || []).length;
+      const externalLinks = (content.match(/\[([^\]]*)\]\(https?:\/\/[^)]*\)/g) || []).length;
+      
+      // Analyze images
+      const imageCount = (content.match(/!\[([^\]]*)\]\([^)]*\)/g) || []).length;
+      
+      // Title Analysis (20 points)
+      if (seoTitle.length > 0) {
+        if (seoTitle.length >= 30 && seoTitle.length <= 60) {
+          analysis.title.score = 20;
+        } else if (seoTitle.length < 30) {
+          analysis.title.score = 10;
+          analysis.title.issues.push({
+            type: 'warning',
+            text: `Title is too short (${seoTitle.length}/30-60 chars)`,
+            fix: 'Add more descriptive words to reach 30-60 characters'
+          });
+        } else {
+          analysis.title.score = 10;
+          analysis.title.issues.push({
+            type: 'error',
+            text: `Title is too long (${seoTitle.length}/60 chars max)`,
+            fix: 'Shorten to under 60 characters for optimal display'
+          });
+        }
+      } else {
+        analysis.title.issues.push({
+          type: 'error',
+          text: 'No SEO title provided',
+          fix: 'Add a compelling title between 30-60 characters'
+        });
+      }
+      
+      // Description Analysis (20 points)
+      if (seoDesc.length > 0) {
+        if (seoDesc.length >= 120 && seoDesc.length <= 160) {
+          analysis.description.score = 20;
+        } else if (seoDesc.length < 120) {
+          analysis.description.score = 10;
+          analysis.description.issues.push({
+            type: 'warning',
+            text: `Description too short (${seoDesc.length}/120-160 chars)`,
+            fix: 'Expand description to 120+ characters for better CTR'
+          });
+        } else {
+          analysis.description.score = 10;
+          analysis.description.issues.push({
+            type: 'error',
+            text: `Description too long (${seoDesc.length}/160 chars max)`,
+            fix: 'Trim to under 160 characters to prevent truncation'
+          });
+        }
+      } else {
+        analysis.description.issues.push({
+          type: 'error',
+          text: 'No meta description provided',
+          fix: 'Add a compelling description (120-160 chars)'
+        });
+      }
+      
+      // Content Analysis (25 points)
+      if (wordCount >= 300) {
+        if (wordCount >= 1500) {
+          analysis.content.score = 25;
+        } else if (wordCount >= 1000) {
+          analysis.content.score = 20;
+        } else if (wordCount >= 600) {
+          analysis.content.score = 15;
+        } else {
+          analysis.content.score = 10;
+          analysis.content.issues.push({
+            type: 'warning',
+            text: `Content is short (${wordCount} words)`,
+            fix: 'Aim for 1000+ words for better SEO performance'
+          });
+        }
+      } else {
+        analysis.content.issues.push({
+          type: 'error',
+          text: `Content too short (${wordCount}/300 min words)`,
+          fix: 'Add at least ${300 - wordCount} more words'
+        });
+      }
+      
+      // Check content structure
+      if (totalHeadings === 0) {
+        analysis.content.issues.push({
+          type: 'error',
+          text: 'No headings found in content',
+          fix: 'Add H1, H2, H3 headings to structure your content'
+        });
+      } else if (wordCount / totalHeadings > 300) {
+        analysis.content.issues.push({
+          type: 'warning',
+          text: `Too few headings (${totalHeadings} for ${wordCount} words)`,
+          fix: 'Add more subheadings every 200-300 words'
+        });
+      }
+      
+      if (imageCount === 0 && wordCount > 500) {
+        analysis.content.issues.push({
+          type: 'warning',
+          text: 'No images in content',
+          fix: 'Add relevant images to improve engagement'
+        });
+      }
+      
+      if (internalLinks === 0) {
+        analysis.content.issues.push({
+          type: 'info',
+          text: 'No internal links found',
+          fix: 'Add links to related content on your site'
+        });
+      }
+      
+      // Keywords Analysis (20 points)
+      if (keywords) {
+        const keywordList = keywords.split(',').map(k => k.trim().toLowerCase());
+        const contentLower = content.toLowerCase();
+        const titleLower = seoTitle.toLowerCase();
+        
+        let keywordsInContent = 0;
+        let keywordDensities = [];
+        
+        keywordList.forEach(keyword => {
+          const regex = new RegExp(keyword, 'gi');
+          const matches = (contentLower.match(regex) || []).length;
+          const density = ((matches / wordCount) * 100).toFixed(2);
+          
+          if (matches > 0) {
+            keywordsInContent++;
+            keywordDensities.push({ keyword, count: matches, density });
+          }
+          
+          // Check keyword in title
+          if (!titleLower.includes(keyword)) {
+            analysis.keywords.issues.push({
+              type: 'warning',
+              text: `"${keyword}" not in title`,
+              fix: 'Include primary keyword in the title'
+            });
+          }
+        });
+        
+        if (keywordsInContent === keywordList.length) {
+          analysis.keywords.score = 20;
+        } else if (keywordsInContent > 0) {
+          analysis.keywords.score = 10;
+          analysis.keywords.issues.push({
+            type: 'warning',
+            text: `Only ${keywordsInContent}/${keywordList.length} keywords found`,
+            fix: 'Naturally incorporate missing keywords'
+          });
+        } else {
+          analysis.keywords.issues.push({
+            type: 'error',
+            text: 'Focus keywords not found in content',
+            fix: 'Add your target keywords naturally in the content'
+          });
+        }
+        
+        // Check keyword density
+        keywordDensities.forEach(kd => {
+          if (parseFloat(kd.density) > 3) {
+            analysis.keywords.issues.push({
+              type: 'warning',
+              text: `"${kd.keyword}" density too high (${kd.density}%)`,
+              fix: 'Reduce keyword stuffing, aim for 1-3% density'
+            });
+          }
+        });
+      } else {
+        analysis.keywords.issues.push({
+          type: 'info',
+          text: 'No focus keywords set',
+          fix: 'Add 2-5 target keywords for your content'
+        });
+      }
+      
+      // Readability Analysis (15 points)
+      let fleschScore = 206.835 - 1.015 * avgWordsPerSentence - 84.6 * (words.filter(w => w.length > 6).length / wordCount);
+      fleschScore = Math.max(0, Math.min(100, fleschScore));
+      
+      if (avgWordsPerSentence <= 20 && avgWordsPerSentence >= 10) {
+        analysis.readability.score = 15;
+      } else if (avgWordsPerSentence > 20 && avgWordsPerSentence <= 25) {
+        analysis.readability.score = 10;
+        analysis.readability.issues.push({
+          type: 'warning',
+          text: `Sentences are long (avg ${avgWordsPerSentence} words)`,
+          fix: 'Break long sentences into shorter ones (15-20 words)'
+        });
+      } else if (avgWordsPerSentence > 25) {
+        analysis.readability.score = 5;
+        analysis.readability.issues.push({
+          type: 'error',
+          text: `Sentences too long (avg ${avgWordsPerSentence} words)`,
+          fix: 'Simplify sentences to improve readability'
+        });
+      } else if (avgWordsPerSentence < 10) {
+        analysis.readability.score = 10;
+        analysis.readability.issues.push({
+          type: 'warning',
+          text: `Sentences too short (avg ${avgWordsPerSentence} words)`,
+          fix: 'Combine short sentences for better flow'
+        });
+      }
+      
+      if (avgSentencesPerParagraph > 5) {
+        analysis.readability.issues.push({
+          type: 'warning',
+          text: `Long paragraphs (avg ${avgSentencesPerParagraph} sentences)`,
+          fix: 'Break into smaller paragraphs (2-4 sentences)'
+        });
+      }
+      
+      // Calculate overall score
+      analysis.overall = analysis.title.score + analysis.description.score + 
+                        analysis.content.score + analysis.keywords.score + 
+                        analysis.readability.score;
+      
+      // Update UI with detailed analysis
+      window.updateSEODisplay(analysis, {
+        wordCount,
+        readingTime,
+        sentences: sentences.length,
+        paragraphs: paragraphs.length,
+        headings: totalHeadings,
+        images: imageCount,
+        links: { internal: internalLinks, external: externalLinks },
+        fleschScore: Math.round(fleschScore),
+        avgWordsPerSentence,
+        avgSentencesPerParagraph
+      });
+    }
+    
+    window.updateSEODisplay = function(analysis, stats) {
+      const scoreEl = document.getElementById('seo-score');
+      const scoreValue = document.getElementById('seo-score-value');
+      const scoreBar = document.getElementById('seo-score-bar');
+      const suggestionsEl = document.getElementById('seo-suggestions');
+      const wordCountEl = document.getElementById('word-count');
+      const readabilityEl = document.getElementById('readability-score');
+      const keywordCountEl = document.getElementById('keyword-count');
+      
+      if (scoreEl) scoreEl.classList.remove('hidden');
+      
+      // Update main score
+      if (scoreValue) {
+        const percentage = analysis.overall;
+        scoreValue.textContent = `${percentage}/100`;
+        scoreValue.className = 'text-sm font-bold ' + 
+          (percentage >= 80 ? 'text-green-500' : 
+           percentage >= 60 ? 'text-yellow-500' : 'text-red-500');
+      }
+      
+      if (scoreBar) {
+        scoreBar.style.width = `${analysis.overall}%`;
+        scoreBar.className = 'h-2 rounded-full transition-all duration-300 ' +
+          (analysis.overall >= 80 ? 'bg-green-500' : 
+           analysis.overall >= 60 ? 'bg-yellow-500' : 'bg-red-500');
+      }
+      
+      // Build detailed suggestions HTML
+      if (suggestionsEl) {
+        const allIssues = [
+          ...analysis.title.issues,
+          ...analysis.description.issues,
+          ...analysis.content.issues,
+          ...analysis.keywords.issues,
+          ...analysis.readability.issues
+        ];
+        
+        if (allIssues.length > 0) {
+          const issuesByType = {
+            error: allIssues.filter(i => i.type === 'error'),
+            warning: allIssues.filter(i => i.type === 'warning'),
+            info: allIssues.filter(i => i.type === 'info')
+          };
+          
+          let html = '<div class="space-y-2 text-xs">';
+          
+          if (issuesByType.error.length > 0) {
+            html += '<div class="space-y-1">';
+            html += '<div class="font-semibold text-red-500">Critical Issues:</div>';
+            issuesByType.error.forEach(issue => {
+              html += `<div class="pl-3 space-y-0.5">`;
+              html += `<div class="text-red-400">• ${issue.text}</div>`;
+              html += `<div class="text-text-muted/70 pl-3 text-[10px]">→ ${issue.fix}</div>`;
+              html += `</div>`;
+            });
+            html += '</div>';
+          }
+          
+          if (issuesByType.warning.length > 0) {
+            html += '<div class="space-y-1">';
+            html += '<div class="font-semibold text-yellow-500">Improvements:</div>';
+            issuesByType.warning.forEach(issue => {
+              html += `<div class="pl-3 space-y-0.5">`;
+              html += `<div class="text-yellow-400">• ${issue.text}</div>`;
+              html += `<div class="text-text-muted/70 pl-3 text-[10px]">→ ${issue.fix}</div>`;
+              html += `</div>`;
+            });
+            html += '</div>';
+          }
+          
+          if (issuesByType.info.length > 0) {
+            html += '<div class="space-y-1">';
+            html += '<div class="font-semibold text-blue-500">Suggestions:</div>';
+            issuesByType.info.forEach(issue => {
+              html += `<div class="pl-3 space-y-0.5">`;
+              html += `<div class="text-blue-400">• ${issue.text}</div>`;
+              html += `<div class="text-text-muted/70 pl-3 text-[10px]">→ ${issue.fix}</div>`;
+              html += `</div>`;
+            });
+            html += '</div>';
+          }
+          
+          html += '</div>';
+          suggestionsEl.innerHTML = html;
+        } else {
+          suggestionsEl.innerHTML = '<div class="text-green-500 font-semibold">✓ Excellent! Your content is well-optimized.</div>';
+        }
+      }
+      
+      // Update statistics
+      if (wordCountEl) {
+        wordCountEl.textContent = `${stats.wordCount} (${stats.readingTime} min read)`;
+      }
+      
+      if (readabilityEl) {
+        let readabilityText = 'Easy';
+        if (stats.fleschScore < 30) readabilityText = 'Very Hard';
+        else if (stats.fleschScore < 50) readabilityText = 'Hard';
+        else if (stats.fleschScore < 60) readabilityText = 'Medium';
+        else if (stats.fleschScore < 70) readabilityText = 'Good';
+        
+        readabilityEl.textContent = `${readabilityText} (${stats.fleschScore}/100)`;
+      }
+      
+      if (keywordCountEl) {
+        const keywords = (document.getElementById('seo-keywords') as HTMLInputElement)?.value || '';
+        const keywordList = keywords.split(',').filter(k => k.trim()).length;
+        keywordCountEl.textContent = keywordList > 0 ? `${keywordList} keywords` : 'None set';
+      }
+      
+      // Add detailed stats section if not exists
+      let statsSection = document.getElementById('detailed-stats');
+      if (!statsSection) {
+        const container = document.getElementById('seo-score')?.parentElement;
+        if (container) {
+          const statsDiv = document.createElement('div');
+          statsDiv.id = 'detailed-stats';
+          statsDiv.className = 'border-t border-border/50 mt-3 pt-3 space-y-1.5 text-[11px]';
+          statsDiv.innerHTML = `
+            <div class="grid grid-cols-2 gap-2">
+              <div class="flex justify-between">
+                <span class="text-text-muted">Paragraphs:</span>
+                <span id="stat-paragraphs" class="font-medium"></span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-text-muted">Sentences:</span>
+                <span id="stat-sentences" class="font-medium"></span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-text-muted">Headings:</span>
+                <span id="stat-headings" class="font-medium"></span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-text-muted">Images:</span>
+                <span id="stat-images" class="font-medium"></span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-text-muted">Int. Links:</span>
+                <span id="stat-int-links" class="font-medium"></span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-text-muted">Ext. Links:</span>
+                <span id="stat-ext-links" class="font-medium"></span>
+              </div>
+            </div>
+            <div class="pt-1.5 border-t border-border/30">
+              <div class="flex justify-between">
+                <span class="text-text-muted">Avg words/sentence:</span>
+                <span id="stat-avg-words" class="font-medium"></span>
+              </div>
+            </div>
+          `;
+          container.appendChild(statsDiv);
+        }
+      }
+      
+      // Update detailed stats
+      const updateStat = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value.toString();
+      };
+      
+      updateStat('stat-paragraphs', stats.paragraphs);
+      updateStat('stat-sentences', stats.sentences);
+      updateStat('stat-headings', stats.headings);
+      updateStat('stat-images', stats.images);
+      updateStat('stat-int-links', stats.links.internal);
+      updateStat('stat-ext-links', stats.links.external);
+      updateStat('stat-avg-words', stats.avgWordsPerSentence);
+    }
+    
+  </script>
+</AdminLayout>

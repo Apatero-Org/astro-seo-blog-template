@@ -1,0 +1,28 @@
+{
+  "authors": [
+    {
+      "id": "kevin",
+      "name": "Kevin Gabeci",
+      "email": "kgabeci@gmail.com",
+      "bio": "Developer and content creator. Creator of this Astro SEO Blog Template. Visit Apatero at apatero.com for more projects.",
+      "avatar": "",
+      "social": {
+        "github": "TheDovakiin",
+        "linkedin": "https://www.linkedin.com/in/kevin-gabeci/",
+        "website": "https://www.kevingabeci.com/"
+      }
+    },
+    {
+      "id": "your-id",
+      "name": "Your Name",
+      "email": "your.email@example.com",
+      "bio": "Your bio goes here. Tell readers about yourself and your expertise.",
+      "avatar": "",
+      "social": {
+        "github": "yourusername",
+        "linkedin": "https://www.linkedin.com/in/yourusername/",
+        "website": "https://yourwebsite.com"
+      }
+    }
+  ]
+}

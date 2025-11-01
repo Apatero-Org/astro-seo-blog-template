@@ -1,0 +1,159 @@
+---
+import { getCategories, getTags } from '../../lib/data';
+import { getPublishedBlogPosts } from '../../lib/posts';
+import { normalizeTagName } from '../../lib/tags';
+
+export interface Props {
+  authorInfo: any;
+  authorPosts: any[];
+}
+
+const { authorInfo, authorPosts } = Astro.props;
+
+// Get data for sidebar
+const categories = await getCategories();
+const allPosts = await getPublishedBlogPosts();
+const featuredPost = allPosts.find(p => p.data.featured) || allPosts[0];
+
+// Get author-specific stats
+const authorCategories = [...new Set(authorPosts.map(post => post.data.category))];
+const authorTagsFlat = authorPosts.flatMap(post => post.data.tags || []);
+const authorTagCounts = authorTagsFlat.reduce((acc, tag) => {
+  acc[tag] = (acc[tag] || 0) + 1;
+  return acc;
+}, {});
+const authorPopularTags = Object.entries(authorTagCounts)
+  .sort((a, b) => b[1] - a[1])
+  .slice(0, 10);
+
+// Get global category and tag counts for comparison
+const allPostTags = allPosts.flatMap(post => post.data.tags || []);
+const globalTagCounts = allPostTags.reduce((acc, tag) => {
+  acc[tag] = (acc[tag] || 0) + 1;
+  return acc;
+}, {});
+const globalCategoryCounts = allPosts.reduce((acc, post) => {
+  const category = post.data.category;
+  acc[category] = (acc[category] || 0) + 1;
+  return acc;
+}, {});
+---
+
+<aside class="space-y-8 lg:sticky lg:top-8 lg:h-fit">
+  <!-- Back to All Blogs -->
+  <div>
+    <a href="/blog" class="inline-flex items-center gap-2 px-4 py-2 border border-border rounded-full text-text hover:bg-text hover:text-background transition-all text-sm font-medium w-full justify-center">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 19 5 12 12 5"></polyline>
+      </svg>
+      Back to All Blogs
+    </a>
+  </div>
+
+  <!-- Author Stats -->
+  <div class="border-t pt-8">
+    <h3 class="text-sm font-bold uppercase mb-4">Author Stats</h3>
+    <div class="space-y-3 text-sm">
+      <div class="flex justify-between">
+        <span class="text-text-muted">Total Articles</span>
+        <span class="font-medium">{authorPosts.length}</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-text-muted">Categories</span>
+        <span class="font-medium">{authorCategories.length}</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-text-muted">Tags Used</span>
+        <span class="font-medium">{Object.keys(authorTagCounts).length}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Featured Article -->
+  {featuredPost && (
+    <div class="border-t pt-8">
+      <h3 class="text-sm font-bold uppercase mb-4">Featured Article</h3>
+      <a href={`/blog/${featuredPost.slug}`} class="block group">
+        <div class="border border-border rounded-xl overflow-hidden hover:bg-surface transition-colors">
+          {featuredPost.data.heroImage && (
+            <div class="aspect-video overflow-hidden">
+              <img
+                src={featuredPost.data.heroImage}
+                alt={featuredPost.data.heroImageAlt || featuredPost.data.title}
+                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                loading="lazy"
+              />
+            </div>
+          )}
+          <div class="p-4">
+            <div class="text-xs text-text-muted mb-2 uppercase font-medium">
+              {featuredPost.data.category}
+            </div>
+            <h4 class="font-semibold line-clamp-2 mb-2 group-hover:opacity-80 transition-opacity">
+              {featuredPost.data.title}
+            </h4>
+            <p class="text-sm text-text-muted line-clamp-2">
+              {featuredPost.data.description}
+            </p>
+          </div>
+        </div>
+      </a>
+    </div>
+  )}
+
+  <!-- Author's Categories -->
+  <div>
+    <h3 class="text-sm font-bold uppercase mb-4">Categories by {authorInfo.name}</h3>
+    <div class="flex flex-wrap gap-2">
+      {authorCategories.map((category) => {
+        const authorCount = authorPosts.filter(p => p.data.category === category).length;
+        const globalCount = globalCategoryCounts[category] || 0;
+        return (
+          <a
+            href={`/blog/category/${category.toLowerCase().replace(/\s+/g, '-')}`}
+            class="px-3 py-1 bg-surface rounded-full text-sm hover:bg-border transition-colors"
+          >
+            {category} ({authorCount}/{globalCount})
+          </a>
+        );
+      })}
+    </div>
+  </div>
+
+  <!-- Author's Popular Tags -->
+  <div>
+    <h3 class="text-sm font-bold uppercase mb-4">Tags by {authorInfo.name}</h3>
+    <div class="flex flex-wrap gap-2">
+      {authorPopularTags.map(([tag, authorCount]) => {
+        const globalCount = globalTagCounts[tag] || 0;
+        return (
+          <a
+            href={`/blog/tag/${normalizeTagName(tag)}`}
+            class="px-3 py-1 bg-surface rounded-full text-sm hover:bg-border transition-colors"
+          >
+            #{tag} ({authorCount}/{globalCount})
+          </a>
+        );
+      })}
+    </div>
+  </div>
+
+  <!-- All Categories -->
+  <div>
+    <h3 class="text-sm font-bold uppercase mb-4">All Categories</h3>
+    <div class="flex flex-wrap gap-2">
+      {categories.map((category) => {
+        const count = globalCategoryCounts[category.name] || 0;
+        return (
+          <a
+            href={`/blog/category/${category.slug}`}
+            class="px-3 py-1 bg-surface rounded-full text-sm hover:bg-border transition-colors"
+          >
+            {category.name} ({count})
+          </a>
+        );
+      })}
+    </div>
+  </div>
+</aside>

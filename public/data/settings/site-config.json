@@ -1,0 +1,52 @@
+{
+  "title": "Astro SEO Blog Template",
+  "description": "A modern, feature-rich, and SEO-optimized blog template built with Astro. Perfect for developers and content creators.",
+  "url": "https://astroseoblog.com",
+  "author": "Your Name",
+  "authorEmail": "your.email@example.com",
+  "authorWebsite": "",
+  "authorAvatar": "/favicon.svg",
+  "locale": "en",
+  "ogImage": "/og-image.jpg",
+  "navItems": [
+    {
+      "label": "Home",
+      "href": "/"
+    },
+    {
+      "label": "Blog",
+      "href": "/blog"
+    },
+    {
+      "label": "About",
+      "href": "/about"
+    }
+  ],
+  "postsPerPage": 10,
+  "recentPostsCount": 5,
+  "social": {
+    "twitter": "@yourusername",
+    "github": "yourusername",
+    "linkedin": "https://www.linkedin.com/in/yourusername/",
+    "instagram": "@yourusername",
+    "youtube": "https://www.youtube.com/@yourusername",
+    "discord": "https://discord.gg/your-invite"
+  },
+  "features": {
+    "darkMode": true,
+    "search": true,
+    "comments": true,
+    "rss": true
+  },
+  "gaId": "",
+  "blogCTA": {
+    "enabled": false,
+    "title": "Subscribe to Newsletter",
+    "description": "Get the latest posts delivered right to your inbox.",
+    "buttonText": "Subscribe",
+    "buttonUrl": "#",
+    "secondaryText": "Join our community",
+    "showStats": false,
+    "stats": []
+  }
+}

@@ -1,0 +1,518 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import ImagePicker from '../../components/admin/ImagePicker.astro';
+import { getAuthors } from '../../lib/authors';
+import { getCategories } from '../../lib/data';
+import fs from 'fs/promises';
+import path from 'path';
+
+let error = '';
+
+// Get all authors and categories
+const authors = await getAuthors();
+const categoriesData = await getCategories();
+
+if (Astro.request.method === 'POST') {
+  try {
+    const formData = await Astro.request.formData();
+    const title = formData.get('title')?.toString() || '';
+    const description = formData.get('description')?.toString() || '';
+    const category = formData.get('category')?.toString() || '';
+    const tags = formData.get('tags')?.toString()?.split(',').map(t => t.trim()) || [];
+    const author = formData.get('author')?.toString() || 'default';
+    const draft = formData.get('draft') === 'on';
+    const featured = formData.get('featured') === 'on';
+    const heroImage = formData.get('heroImage')?.toString() || '';
+    const content = formData.get('content')?.toString() || '';
+    const seoTitle = formData.get('seoTitle')?.toString() || title;
+    const seoDescription = formData.get('seoDescription')?.toString() || description;
+    const seoKeywords = formData.get('seoKeywords')?.toString() || '';
+    const noindex = formData.get('noindex') === 'on';
+    const nofollow = formData.get('nofollow') === 'on';
+    const canonicalUrl = formData.get('canonicalUrl')?.toString() || '';
+    const ogTitle = formData.get('ogTitle')?.toString() || title;
+    const ogDescription = formData.get('ogDescription')?.toString() || description;
+    const ogImage = formData.get('ogImage')?.toString() || heroImage;
+    
+    // Generate slug from title
+    const slug = title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    
+    // Build the frontmatter
+    const frontmatter = `---
+title: "${title}"
+description: "${description}"
+publishDate: ${new Date().toISOString()}
+updateDate: ${new Date().toISOString()}
+author: "${author}"
+category: "${category}"
+tags: ${JSON.stringify(tags)}
+featured: ${featured}
+draft: ${draft}
+heroImage: "${heroImage}"
+seoTitle: "${seoTitle}"
+seoDescription: "${seoDescription}"
+seoKeywords: "${seoKeywords}"
+noindex: ${noindex}
+nofollow: ${nofollow}
+canonicalUrl: "${canonicalUrl}"
+ogTitle: "${ogTitle}"
+ogDescription: "${ogDescription}"
+ogImage: "${ogImage}"
+---
+
+${content}`;
+
+    // Create posts directory if it doesn't exist
+    const postsDir = path.join(process.cwd(), 'public', 'data', 'posts');
+    await fs.mkdir(postsDir, { recursive: true });
+    
+    // Write to new location in public/data/posts
+    const filePath = path.join(postsDir, `${slug}.mdx`);
+    
+    // Also write to src/content/blog for now to maintain compatibility
+    const srcFilePath = path.join(process.cwd(), 'src', 'content', 'blog', `${slug}.mdx`);
+    
+    // Check if file already exists
+    let fileExists = false;
+    try {
+      await fs.access(filePath);
+      fileExists = true;
+      error = 'A post with this title already exists. Please choose a different title.';
+    } catch {
+      // File doesn't exist, we can proceed
+    }
+    
+    if (!fileExists) {
+      // File doesn't exist, create it in new location
+      await fs.writeFile(filePath, frontmatter, 'utf-8');
+      
+      // Try to also save to old location, but don't fail if it doesn't work
+      try {
+        await fs.writeFile(srcFilePath, frontmatter, 'utf-8');
+      } catch (e) {
+        console.log('Could not write to old location, continuing with new location only');
+      }
+      
+      // Redirect to posts page
+      return Astro.redirect('/admin/posts');
+    }
+  } catch (e) {
+    console.error('Failed to create post:', e);
+    error = 'Failed to create post. Please try again.';
+  }
+}
+---
+
+<AdminLayout title="Create New Post" activeNav="posts">
+  <div class="p-8 flex flex-col flex-1 min-h-full">
+    {error && (
+      <div class="mb-6 p-4 bg-red-500/10 border border-red-500 rounded-lg text-red-500">
+        {error}
+      </div>
+    )}
+
+    <!-- WordPress-style Layout -->
+    <form method="POST" class="grid grid-cols-1 lg:grid-cols-[1fr,320px] gap-6 flex-1 min-h-0">
+      <!-- Main Content Area -->
+      <div class="flex flex-col min-h-0">
+        <!-- Title Block -->
+        <div class="">
+          <textarea
+            id="title"
+            name="title"
+            required
+            placeholder="Enter title here..."
+            class="w-full text-4xl font-bold bg-transparent border-0 outline-none focus:ring-0 placeholder-text-muted/30 px-0 mb-6 resize-none overflow-hidden"
+            rows="1"
+            oninput="this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px'"
+          ></textarea>
+        </div>
+        
+        <!-- Content Editor Block -->
+        <div class="flex-1 min-h-0 flex flex-col">
+          <div class="relative flex-1 flex flex-col">
+            <textarea
+              id="content"
+              name="content"
+              required
+              placeholder="Write your post content here... (Markdown/MDX supported)"
+              class="w-full bg-transparent border-0 outline-none font-mono text-sm placeholder-text-muted/30 px-0 resize-none flex-1"
+              style="overflow-y: auto;"
+              oninput="window.autoExpandTextarea(this)"
+              ondblclick="window.openImagePicker('content', 'content')"
+            ></textarea>
+          </div>
+          
+          <div id="preview" class="hidden w-full prose prose-invert max-w-none mt-4"></div>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="space-y-6">
+        <!-- Publish & Featured Image Box -->
+        <div class="bg-surface rounded-xl shadow-lg overflow-hidden">
+          <div class="p-4 border-b border-border/50">
+            <h3 class="font-semibold">Publish Settings</h3>
+          </div>
+          <div class="p-4 space-y-4">
+            <!-- Excerpt -->
+            <div>
+              <label class="text-sm font-medium block mb-2">Excerpt</label>
+              <textarea
+                id="description"
+                name="description"
+                rows="2"
+                required
+                placeholder="Short description..."
+                class="w-full bg-background/50 border border-border/50 rounded-lg px-3 py-2 text-sm"
+              ></textarea>
+            </div>
+            
+            <div class="border-t border-border/50 pt-4">
+              <div class="space-y-3">
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="draft"
+                    class="rounded border-border"
+                  />
+                  <span class="text-sm">Save as Draft</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="featured"
+                    class="rounded border-border"
+                  />
+                  <span class="text-sm">Featured Post</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+            
+        <!-- Featured Image Box -->
+        <div class="bg-surface rounded-xl shadow-lg overflow-hidden">
+          <div class="p-4 border-b border-border/50">
+            <h3 class="font-semibold">Featured Image</h3>
+          </div>
+          <div class="p-4">
+              <div id="heroImagePreview">
+                <button
+                  id="heroImageButton"
+                  type="button"
+                  onclick="window.openImagePicker('heroImage', 'hero')"
+                  class="w-full aspect-video border-2 border-dashed border-border/50 rounded-lg hover:border-text transition-colors flex flex-col items-center justify-center bg-background/50">
+                  <svg class="w-6 h-6 mb-1 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                  </svg>
+                  <span class="text-xs text-text-muted">Set featured image</span>
+                </button>
+              </div>
+            <input
+              type="hidden"
+              id="heroImage"
+              name="heroImage"
+              value=""
+            />
+          </div>
+        </div>
+
+        <!-- Categories & Tags -->
+        <div class="bg-surface rounded-xl shadow-lg overflow-hidden">
+          <div class="p-4 border-b border-border/50">
+            <h3 class="font-semibold">Categories & Tags</h3>
+          </div>
+          <div class="p-4 space-y-4">
+            <div>
+              <label class="text-sm font-medium block mb-2">Category</label>
+              <select id="category" name="category" class="w-full bg-background/50 border border-border/50 rounded-lg px-3 py-2 text-sm" required>
+                <option value="">Select a category</option>
+                {categoriesData.map(cat => (
+                  <option value={cat.name}>{cat.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label class="text-sm font-medium block mb-2">Author</label>
+              <select id="author" name="author" class="w-full bg-background/50 border border-border/50 rounded-lg px-3 py-2 text-sm" required>
+                {authors.map(author => (
+                  <option value={author.id}>{author.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label class="text-sm font-medium block mb-2">Tags</label>
+              <input
+                type="text"
+                id="tags"
+                name="tags"
+                class="w-full bg-background/50 border border-border/50 rounded-lg px-3 py-2 text-sm"
+                placeholder="Separate with commas"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- SEO Settings -->
+        <div class="bg-surface rounded-xl shadow-lg overflow-hidden">
+          <div class="p-4 border-b border-border/50 flex items-center justify-between">
+            <h3 class="font-semibold">SEO Settings</h3>
+            <button
+              type="button"
+              onclick="analyzeSEO()"
+              class="px-3 py-1 bg-text text-background rounded text-xs font-medium hover:opacity-90 transition-opacity"
+            >
+              Analyze SEO
+            </button>
+          </div>
+          <div class="p-4 space-y-4">
+            <!-- SEO Score Display -->
+            <div id="seo-score" class="hidden">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-sm font-medium">SEO Score</span>
+                <span id="seo-score-value" class="text-sm font-bold">0%</span>
+              </div>
+              <div class="w-full bg-background/50 rounded-full h-2 mb-3">
+                <div id="seo-score-bar" class="h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+              </div>
+              <div id="seo-suggestions" class="space-y-2 text-xs"></div>
+            </div>
+
+            <div>
+              <label class="text-sm font-medium block mb-2">SEO Title</label>
+              <input
+                type="text"
+                id="seoTitle"
+                name="seoTitle"
+                class="w-full bg-background/50 border border-border/50 rounded-lg px-3 py-2 text-sm"
+                placeholder="Leave empty to use post title"
+              />
+              <span class="text-xs text-text-muted">Characters: <span id="seoTitleCount">0</span>/60</span>
+            </div>
+            
+            <div>
+              <label class="text-sm font-medium block mb-2">Meta Description</label>
+              <textarea
+                id="seoDescription"
+                name="seoDescription"
+                rows="2"
+                class="w-full bg-background/50 border border-border/50 rounded-lg px-3 py-2 text-sm"
+                placeholder="Leave empty to use excerpt"
+              ></textarea>
+              <span class="text-xs text-text-muted">Characters: <span id="seoDescCount">0</span>/160</span>
+            </div>
+            
+            <div>
+              <label class="text-sm font-medium block mb-2">Focus Keywords</label>
+              <input
+                type="text"
+                id="seoKeywords"
+                name="seoKeywords"
+                class="w-full bg-background/50 border border-border/50 rounded-lg px-3 py-2 text-sm"
+                placeholder="Separate with commas"
+              />
+            </div>
+            
+            <div class="space-y-2">
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="noindex"
+                  class="rounded border-border"
+                />
+                <span class="text-sm">Hide from search engines</span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="nofollow"
+                  class="rounded border-border"
+                />
+                <span class="text-sm">No follow links</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Open Graph Settings -->
+        <details class="bg-surface rounded-xl shadow-lg overflow-hidden">
+          <summary class="p-4 border-b border-border/50 cursor-pointer hover:bg-background/50 transition-colors">
+            <span class="font-semibold">Social Media Preview</span>
+          </summary>
+          <div class="p-4 space-y-4">
+            <div>
+              <label class="text-sm font-medium block mb-2">OG Title</label>
+              <input
+                type="text"
+                id="ogTitle"
+                name="ogTitle"
+                class="w-full bg-background/50 border border-border/50 rounded-lg px-3 py-2 text-sm"
+                placeholder="Leave empty to use SEO title"
+              />
+            </div>
+            
+            <div>
+              <label class="text-sm font-medium block mb-2">OG Description</label>
+              <textarea
+                id="ogDescription"
+                name="ogDescription"
+                rows="2"
+                class="w-full bg-background/50 border border-border/50 rounded-lg px-3 py-2 text-sm"
+                placeholder="Leave empty to use meta description"
+              ></textarea>
+            </div>
+            
+            <div>
+              <label class="text-sm font-medium block mb-2">OG Image</label>
+              <input
+                type="text"
+                id="ogImage"
+                name="ogImage"
+                class="w-full bg-background/50 border border-border/50 rounded-lg px-3 py-2 text-sm"
+                placeholder="Leave empty to use featured image"
+              />
+            </div>
+            
+            <div>
+              <label class="text-sm font-medium block mb-2">Canonical URL</label>
+              <input
+                type="url"
+                id="canonicalUrl"
+                name="canonicalUrl"
+                class="w-full bg-background/50 border border-border/50 rounded-lg px-3 py-2 text-sm"
+                placeholder="Leave empty for default"
+              />
+            </div>
+          </div>
+        </details>
+
+        <!-- Actions -->
+        <div class="flex gap-3">
+          <button
+            type="submit"
+            class="flex-1 px-4 py-2 bg-text text-background rounded-lg hover:opacity-90 transition-opacity font-medium"
+          >
+            Create Post
+          </button>
+          <a
+            href="/admin/posts"
+            class="flex-1 px-4 py-2 border border-border rounded-lg hover:bg-surface transition-colors text-center"
+          >
+            Cancel
+          </a>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <ImagePicker />
+</AdminLayout>
+
+<script>
+  // Character count for SEO fields
+  document.getElementById('seoTitle')?.addEventListener('input', (e) => {
+    const count = (e.target as HTMLInputElement).value.length;
+    document.getElementById('seoTitleCount')!.textContent = count.toString();
+  });
+
+  document.getElementById('seoDescription')?.addEventListener('input', (e) => {
+    const count = (e.target as HTMLTextAreaElement).value.length;
+    document.getElementById('seoDescCount')!.textContent = count.toString();
+  });
+
+  // SEO Analysis
+  window.analyzeSEO = function() {
+    const title = (document.getElementById('seoTitle') as HTMLInputElement)?.value || 
+                  (document.getElementById('title') as HTMLTextAreaElement)?.value;
+    const description = (document.getElementById('seoDescription') as HTMLTextAreaElement)?.value || 
+                        (document.getElementById('description') as HTMLTextAreaElement)?.value;
+    const keywords = (document.getElementById('seoKeywords') as HTMLInputElement)?.value;
+    const content = (document.getElementById('content') as HTMLTextAreaElement)?.value;
+    
+    let score = 0;
+    const suggestions = [];
+    
+    // Title checks
+    if (title) {
+      score += 20;
+      if (title.length >= 30 && title.length <= 60) score += 10;
+      else suggestions.push('Title should be between 30-60 characters');
+    } else {
+      suggestions.push('Add a title');
+    }
+    
+    // Description checks
+    if (description) {
+      score += 20;
+      if (description.length >= 120 && description.length <= 160) score += 10;
+      else suggestions.push('Description should be between 120-160 characters');
+    } else {
+      suggestions.push('Add a meta description');
+    }
+    
+    // Keywords checks
+    if (keywords) {
+      score += 20;
+      const keywordList = keywords.split(',').map(k => k.trim());
+      if (keywordList.length >= 3 && keywordList.length <= 5) score += 10;
+      else suggestions.push('Use 3-5 focus keywords');
+    } else {
+      suggestions.push('Add focus keywords');
+    }
+    
+    // Content checks
+    if (content && content.length > 300) {
+      score += 10;
+    } else {
+      suggestions.push('Content should be at least 300 characters');
+    }
+    
+    // Display results
+    const scoreElement = document.getElementById('seo-score');
+    const scoreValue = document.getElementById('seo-score-value');
+    const scoreBar = document.getElementById('seo-score-bar');
+    const suggestionsElement = document.getElementById('seo-suggestions');
+    
+    if (scoreElement && scoreValue && scoreBar && suggestionsElement) {
+      scoreElement.classList.remove('hidden');
+      scoreValue.textContent = `${score}%`;
+      scoreBar.style.width = `${score}%`;
+      
+      // Color based on score
+      if (score >= 80) {
+        scoreBar.className = 'h-2 rounded-full transition-all duration-300 bg-green-500';
+      } else if (score >= 60) {
+        scoreBar.className = 'h-2 rounded-full transition-all duration-300 bg-yellow-500';
+      } else {
+        scoreBar.className = 'h-2 rounded-full transition-all duration-300 bg-red-500';
+      }
+      
+      // Display suggestions
+      suggestionsElement.innerHTML = suggestions.map(s => 
+        `<div class="flex items-start gap-2">
+          <span class="text-yellow-500">•</span>
+          <span>${s}</span>
+        </div>`
+      ).join('');
+    }
+  };
+
+  // Auto-expand textarea
+  window.autoExpandTextarea = function(textarea: HTMLTextAreaElement) {
+    // Store scroll position
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    
+    // Reset height to auto to get the correct scrollHeight
+    textarea.style.height = 'auto';
+    
+    // Set the height to the scrollHeight
+    textarea.style.height = textarea.scrollHeight + 'px';
+    
+    // Restore scroll position
+    window.scrollTo(0, scrollTop);
+  };
+</script>

@@ -1,0 +1,390 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { sortPostsByDate, formatDate } from '../../lib/utils';
+import { SITE_CONFIG } from '../../data/site-config';
+import { getCategories, getTags } from '../../lib/data';
+import { getPublishedBlogPosts } from '../../lib/posts';
+import { normalizeTagName } from '../../lib/tags';
+import type { GetStaticPaths } from 'astro';
+
+// Enable prerendering for this page
+export const prerender = true;
+
+export const getStaticPaths = (async () => {
+  // Get all non-draft posts from both locations
+  const allPosts = await getPublishedBlogPosts();
+  console.log('Total posts found:', allPosts.length);
+
+  // Sort posts: featured first, then by date
+  const sortedPosts = sortPostsByDate(allPosts).sort((a, b) => {
+    // Featured posts come first
+    if (a.data.featured && !b.data.featured) return -1;
+    if (!a.data.featured && b.data.featured) return 1;
+    // Then sort by date (already sorted by sortPostsByDate)
+    return 0;
+  });
+
+  const POSTS_PER_PAGE = 15;
+  const totalPages = Math.ceil(sortedPosts.length / POSTS_PER_PAGE);
+  console.log('Total pages calculated:', totalPages);
+
+  // If there's only one page or no posts, don't generate any pagination routes
+  if (totalPages <= 1) {
+    console.log('Not generating pagination routes - only 1 page or less');
+    return [];
+  }
+
+  // Generate paths for all pages (2 and beyond, since page 1 is index.astro)
+  const paths = Array.from({ length: totalPages - 1 }, (_, i) => {
+    const pageNum = i + 2; // Start from page 2
+    const startIndex = (pageNum - 1) * POSTS_PER_PAGE;
+    const endIndex = startIndex + POSTS_PER_PAGE;
+    const pagesPosts = sortedPosts.slice(startIndex, endIndex);
+
+    console.log(`Page ${pageNum}: ${pagesPosts.length} posts (indices ${startIndex}-${endIndex-1})`);
+
+    return {
+      params: { page: pageNum.toString() },
+      props: {
+        posts: pagesPosts,
+        currentPage: pageNum,
+        totalPages,
+        totalPosts: sortedPosts.length
+      }
+    };
+  });
+
+  console.log('Generated paths:', paths.map(p => `page ${p.params.page} with ${p.props.posts.length} posts`));
+  return paths;
+}) satisfies GetStaticPaths;
+
+// Try to get data from props first, but fallback to computing it ourselves
+let { posts: paginatedPosts = [], currentPage, totalPages, totalPosts } = Astro.props;
+
+// Debug: Let's see what we actually have
+console.log('Astro.params:', Astro.params);
+console.log('Astro.props:', Astro.props);
+console.log('Current page from params:', Astro.params.page);
+
+// If props are empty, compute the data ourselves as a fallback
+if (!paginatedPosts.length && !currentPage) {
+  console.log('Props are empty, computing data ourselves...');
+
+  // Get all posts for computation
+  const allPosts = await getPublishedBlogPosts();
+
+  // Sort posts: featured first, then by date
+  const sortedPosts = sortPostsByDate(allPosts).sort((a, b) => {
+    // Featured posts come first
+    if (a.data.featured && !b.data.featured) return -1;
+    if (!a.data.featured && b.data.featured) return 1;
+    // Then sort by date (already sorted by sortPostsByDate)
+    return 0;
+  });
+
+  const POSTS_PER_PAGE = 15;
+  currentPage = parseInt(Astro.params.page || '2');
+  totalPages = Math.ceil(sortedPosts.length / POSTS_PER_PAGE);
+  totalPosts = sortedPosts.length;
+
+  const startIndex = (currentPage - 1) * POSTS_PER_PAGE;
+  const endIndex = startIndex + POSTS_PER_PAGE;
+  paginatedPosts = sortedPosts.slice(startIndex, endIndex);
+
+  console.log(`Computed: page ${currentPage}, posts ${paginatedPosts.length}, total ${totalPosts}`);
+}
+
+// Get all posts for sidebar stats
+const allPosts = await getPublishedBlogPosts();
+
+const sortedPosts = sortPostsByDate(allPosts).sort((a, b) => {
+  // Featured posts come first
+  if (a.data.featured && !b.data.featured) return -1;
+  if (!a.data.featured && b.data.featured) return 1;
+  // Then sort by date (already sorted by sortPostsByDate)
+  return 0;
+});
+
+const featuredPosts = sortedPosts.filter(post => post.data.featured);
+
+// Get categories from data
+const categoriesData = await getCategories();
+const categories = categoriesData.map(cat => cat.name);
+
+// Get tags from data and count their usage
+const tagsData = await getTags();
+// Function imported from lib/tags.ts
+
+const allPostTags = allPosts.flatMap(post => post.data.tags || []);
+
+// Create normalized tag counts
+const normalizedTagCounts = new Map();
+allPostTags.forEach(tag => {
+  const normalized = normalizeTagName(tag);
+  normalizedTagCounts.set(normalized, (normalizedTagCounts.get(normalized) || 0) + 1);
+});
+
+// Get all tags and sort by usage using normalized matching
+const popularTags = tagsData
+  .map(tag => ({
+    name: tag.name, // Use the canonical name from JSON file
+    count: normalizedTagCounts.get(normalizeTagName(tag.name)) || 0
+  }))
+  .filter(tag => tag.count > 0) // Only show tags that are actually used
+  .sort((a, b) => b.count - a.count)
+  .slice(0, 10)
+  .map(tag => tag.name);
+
+// Stats
+const totalCategories = categories.length;
+---
+
+<BaseLayout>
+  <div class="min-h-screen">
+    <!-- Compact Blog Header -->
+    <section class="py-12">
+      <div class="container">
+        <div class="max-w-4xl">
+          <h1 class="text-5xl md:text-6xl font-display font-bold mb-3">
+            {SITE_CONFIG.title}
+          </h1>
+          <p class="text-lg text-text-muted">
+            {SITE_CONFIG.description}
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Blog Layout -->
+    <section class="py-12">
+      <div class="container">
+        <div class="grid lg:grid-cols-[1fr,320px] gap-12">
+          <!-- Left Column - Blog Posts -->
+          <div>
+            <!-- All Posts List -->
+            {paginatedPosts.length > 0 ? (
+              <div class="space-y-8">
+                {paginatedPosts.map((post) => (
+                <article class="border-b pb-8">
+                  <a href={`/blog/${post.slug}`} class="block group">
+                    <div class="grid md:grid-cols-[160px,1fr] gap-4">
+                      {post.data.heroImage && (
+                        <div class="overflow-hidden rounded-lg aspect-[16/9] md:aspect-[4/3] bg-surface">
+                          <img
+                            src={post.data.heroImage}
+                            alt={post.data.heroImageAlt || post.data.title}
+                            class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            loading="lazy"
+                          />
+                        </div>
+                      )}
+                      
+                      <div class={post.data.heroImage ? "" : "md:col-span-2"}>
+                        <div class="flex items-center gap-2 text-xs text-text-muted mb-2">
+                          <span class="font-bold uppercase">{post.data.category}</span>
+                          <span>•</span>
+                          <span>{formatDate(post.data.publishDate)}</span>
+                          {post.data.featured && (
+                            <>
+                              <span>•</span>
+                              <span class="px-2 py-0.5 bg-text text-background text-xs rounded">FEATURED</span>
+                            </>
+                          )}
+                        </div>
+                        
+                        <h3 class="text-xl font-semibold mb-2 group-hover:opacity-70 transition-opacity">
+                          {post.data.title}
+                        </h3>
+                        
+                        <p class="text-sm text-text-muted mb-3 line-clamp-2">
+                          {post.data.description}
+                        </p>
+                        
+                        <div class="flex items-center justify-between">
+                          <div class="flex flex-wrap gap-2">
+                            {(post.data.tags || []).slice(0, 3).map((tag) => (
+                              <span class="text-xs text-text-muted">
+                                #{tag}
+                              </span>
+                            ))}
+                          </div>
+                          <span class="text-xs text-text-muted group-hover:text-text transition-colors">
+                            Read more →
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </a>
+                </article>
+                ))}
+              </div>
+            ) : (
+              <div class="border border-border rounded-lg p-8 text-center">
+                <p class="text-text-muted mb-4">No posts on this page.</p>
+              </div>
+            )}
+            
+            <!-- Pagination -->
+            <div class="mt-12 flex items-center justify-center gap-2">
+              {currentPage > 1 ? (
+                <a
+                  href={currentPage === 2 ? '/blog' : `/page/${currentPage - 1}`}
+                  class="px-4 py-2 border border-border rounded-lg hover:bg-surface transition-colors"
+                >
+                  ← Previous
+                </a>
+              ) : (
+                <button
+                  disabled
+                  class="px-4 py-2 border border-border rounded-lg text-text-muted cursor-not-allowed opacity-50"
+                >
+                  ← Previous
+                </button>
+              )}
+
+              <div class="flex items-center gap-2">
+                {currentPage === 1 ? (
+                  <span class="px-4 py-2 bg-text text-background rounded-lg">1</span>
+                ) : (
+                  <a
+                    href="/blog"
+                    class="px-4 py-2 border border-border rounded-lg hover:bg-surface transition-colors"
+                  >
+                    1
+                  </a>
+                )}
+
+                {Array.from({ length: Math.min(totalPages - 1, 4) }, (_, i) => i + 2).map(page => (
+                  page === currentPage ? (
+                    <span class="px-4 py-2 bg-text text-background rounded-lg">{page}</span>
+                  ) : (
+                    <a
+                      href={`/page/${page}`}
+                      class="px-4 py-2 border border-border rounded-lg hover:bg-surface transition-colors"
+                    >
+                      {page}
+                    </a>
+                  )
+                ))}
+
+                {totalPages > 5 && (
+                  <>
+                    <span class="px-2">...</span>
+                    <a
+                      href={`/page/${totalPages}`}
+                      class="px-4 py-2 border border-border rounded-lg hover:bg-surface transition-colors"
+                    >
+                      {totalPages}
+                    </a>
+                  </>
+                )}
+              </div>
+
+              {currentPage < totalPages ? (
+                <a
+                  href={`/page/${currentPage + 1}`}
+                  class="px-4 py-2 border border-border rounded-lg hover:bg-surface transition-colors"
+                >
+                  Next →
+                </a>
+              ) : (
+                <button
+                  disabled
+                  class="px-4 py-2 border border-border rounded-lg text-text-muted cursor-not-allowed opacity-50"
+                >
+                  Next →
+                </button>
+              )}
+            </div>
+          </div>
+          
+          <!-- Right Column - Sidebar -->
+          <aside class="space-y-8 lg:sticky lg:top-8 lg:h-fit">
+            <!-- Categories -->
+            <div>
+              <h3 class="text-sm font-bold uppercase mb-4">Categories</h3>
+              <div class="space-y-2">
+                {categories.map((category) => {
+                  const count = allPosts.filter(p => p.data.category === category).length;
+                  return (
+                    <a href={`/blog/category/${category.toLowerCase()}`} class="flex items-center justify-between py-2 px-3 border border-border rounded-full hover:bg-surface transition-colors">
+                      <span class="text-sm">{category}</span>
+                      <span class="text-xs text-text-muted">{count}</span>
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
+            
+            <!-- Popular Tags -->
+            <div>
+              <h3 class="text-sm font-bold uppercase mb-4">Popular Tags</h3>
+              <div class="flex flex-wrap gap-2">
+                {popularTags.map((tag) => (
+                  <a href={`/blog/tag/${normalizeTagName(tag)}`} class="px-3 py-1 text-sm border border-border rounded-full hover:bg-text hover:text-background transition-all">
+                    #{tag}
+                  </a>
+                ))}
+              </div>
+            </div>
+            
+            <!-- Stats -->
+            <div class="border-t pt-8">
+              <h3 class="text-sm font-bold uppercase mb-4">Stats</h3>
+              <div class="space-y-3">
+                <div class="flex justify-between">
+                  <span class="text-sm text-text-muted">Total Articles</span>
+                  <span class="text-sm font-medium">{totalPosts}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-sm text-text-muted">Categories</span>
+                  <span class="text-sm font-medium">{totalCategories}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-sm text-text-muted">Tags</span>
+                  <span class="text-sm font-medium">{tagsData.length}</span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Featured Posts -->
+            {featuredPosts.length > 0 && (
+              <div class="border-t pt-8">
+                <h3 class="text-sm font-bold uppercase mb-4">Featured Articles</h3>
+                <div class="space-y-4">
+                  {featuredPosts.slice(0, 1).map((post) => (
+                    <a href={`/blog/${post.slug}`} class="block group">
+                      <div class="border border-border rounded-xl overflow-hidden hover:bg-surface transition-colors">
+                        {post.data.heroImage && (
+                          <div class="aspect-video overflow-hidden">
+                            <img
+                              src={post.data.heroImage}
+                              alt={post.data.heroImageAlt || `${post.data.title} - Featured ${post.data.category} article`}
+                              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            />
+                          </div>
+                        )}
+                        <div class="p-4">
+                          <div class="text-xs text-text-muted mb-2">
+                            {post.data.category}
+                          </div>
+                          <h4 class="text-sm font-semibold mb-2 group-hover:opacity-70 transition-opacity">
+                            {post.data.title}
+                          </h4>
+                          <p class="text-xs text-text-muted line-clamp-3">
+                            {post.data.description}
+                          </p>
+                        </div>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+          </aside>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</BaseLayout>

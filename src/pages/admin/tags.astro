@@ -1,0 +1,251 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { getTags } from '../../lib/data';
+import { getPublishedBlogPosts } from '../../lib/posts';
+
+// Get tags
+const tagsData = await getTags();
+
+// Get all posts to count usage
+const allPosts = await getPublishedBlogPosts();
+
+// Function to normalize tag names for comparison
+function normalizeTagName(tagName) {
+  return tagName
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '') // Remove special characters except hyphens and spaces
+    .replace(/\s+/g, '-') // Replace spaces with hyphens
+    .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
+    .trim();
+}
+
+// Count posts per tag with normalized matching
+const postCountMap = new Map();
+const tagNormalizationMap = new Map(); // Maps normalized names to original names
+
+allPosts.forEach(post => {
+  const tags = post.data.tags || [];
+  tags.forEach(tag => {
+    if (tag) {
+      const normalizedTag = normalizeTagName(tag);
+      postCountMap.set(normalizedTag, (postCountMap.get(normalizedTag) || 0) + 1);
+      // Keep track of original tag name for reference
+      if (!tagNormalizationMap.has(normalizedTag)) {
+        tagNormalizationMap.set(normalizedTag, tag);
+      }
+    }
+  });
+});
+
+// Get tags from JSON file and add post counts using normalized matching
+const tags = tagsData.map(tag => {
+  const normalizedJsonTag = normalizeTagName(tag.name);
+  const postCount = postCountMap.get(normalizedJsonTag) || 0;
+
+  return {
+    ...tag,
+    postCount
+  };
+}).sort((a, b) => a.name.localeCompare(b.name));
+
+const totalTags = tags.length;
+const usedTags = tags.filter(t => t.postCount > 0).length;
+---
+
+<AdminLayout title="Tags" activeNav="tags">
+  <div class="p-6 lg:p-8 h-full">
+    <!-- Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl lg:text-4xl font-display font-bold mb-1">TAGS</h1>
+      <p class="text-sm text-text-muted">Manage your blog tags</p>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-2 gap-6 mb-8">
+      <div class="border-b border-border pb-3">
+        <div class="text-xs text-text-muted mb-1 uppercase tracking-wider">Total</div>
+        <div class="text-2xl font-display font-bold">{totalTags}</div>
+      </div>
+      <div class="border-b border-border pb-3">
+        <div class="text-xs text-text-muted mb-1 uppercase tracking-wider">In Use</div>
+        <div class="text-2xl font-display font-bold">{usedTags}</div>
+      </div>
+    </div>
+
+    <!-- Add New Tag -->
+    <div class="mb-8">
+      <h2 class="text-xl font-display font-bold mb-4 uppercase">Add Tag</h2>
+      <form id="add-tag-form" class="flex gap-3 pb-4 border-b border-border">
+        <input
+          type="text"
+          id="tag-name"
+          placeholder="Enter tag name..."
+          class="flex-1 px-4 py-2 bg-background border border-border rounded focus:outline-none focus:border-text"
+          required
+        />
+        <button
+          type="submit"
+          class="px-6 py-2 bg-text text-background rounded-full font-bold hover:bg-text/90 transition-all hover:scale-105"
+        >
+          ADD
+        </button>
+      </form>
+      <div id="error-message" class="mt-3 text-sm text-red-500 hidden"></div>
+      <div id="success-message" class="mt-3 text-sm text-green-500 hidden"></div>
+    </div>
+
+    <!-- Tags List -->
+    <div class="mb-8">
+      <h2 class="text-xl font-display font-bold mb-4 uppercase">All Tags</h2>
+      {tags.length > 0 ? (
+        <div class="space-y-0" id="tags-list">
+          {tags.map((tag, index) => (
+            <div class="flex items-center justify-between py-4 border-b border-border group hover:border-text transition-colors" data-tag-id={tag.id}>
+              <div class="flex items-center gap-3">
+                <span class="text-xl font-display font-bold text-text opacity-20">{String(index + 1).padStart(2, '0')}</span>
+                <div>
+                  <div class="font-bold">{tag.name}</div>
+                  <div class="text-xs text-text-muted">
+                    {tag.postCount} {tag.postCount === 1 ? 'post' : 'posts'}
+                  </div>
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                {tag.postCount > 0 && (
+                  <a
+                    href={`/admin/posts?tag=${encodeURIComponent(tag.name)}`}
+                    class="text-xs hover:opacity-70 transition-opacity uppercase tracking-wider"
+                  >
+                    View
+                  </a>
+                )}
+                <button
+                  type="button"
+                  data-delete-tag={tag.id}
+                  data-tag-name={tag.name}
+                  data-post-count={tag.postCount}
+                  class="text-xs hover:text-red-500 transition-colors uppercase tracking-wider"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div class="py-12 text-center border-t border-border">
+          <p class="text-text-muted">No tags found. Add your first tag above.</p>
+        </div>
+      )}
+    </div>
+  </div>
+
+
+  <script>
+    // Add tag form
+    const form = document.getElementById('add-tag-form') as HTMLFormElement;
+    const input = document.getElementById('tag-name') as HTMLInputElement;
+    const errorMsg = document.getElementById('error-message');
+    const successMsg = document.getElementById('success-message');
+
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const name = input.value.trim();
+      if (!name) return;
+
+      errorMsg?.classList.add('hidden');
+      successMsg?.classList.add('hidden');
+
+      try {
+        const response = await fetch('/api/tags', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ name }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to add tag');
+        }
+
+        // Show success message
+        if (successMsg) {
+          successMsg.textContent = `Tag "${name}" added successfully!`;
+          successMsg.classList.remove('hidden');
+        }
+
+        // Clear input
+        input.value = '';
+
+        // Reload page after a short delay
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+
+      } catch (error) {
+        if (errorMsg) {
+          errorMsg.textContent = error instanceof Error ? error.message : 'Failed to add tag';
+          errorMsg.classList.remove('hidden');
+        }
+      }
+    });
+
+    // Delete tag buttons
+    document.querySelectorAll('[data-delete-tag]').forEach(button => {
+      button.addEventListener('click', async (e) => {
+        const target = e.currentTarget as HTMLElement;
+        const tagId = target.dataset.deleteTag;
+        const tagName = target.dataset.tagName;
+        const postCount = parseInt(target.dataset.postCount || '0');
+
+        if (postCount > 0) {
+          alert(`Cannot delete "${tagName}" because it has ${postCount} post(s). Please reassign or delete the posts first.`);
+          return;
+        }
+
+        if (!confirm(`Are you sure you want to delete the tag "${tagName}"?`)) {
+          return;
+        }
+
+        try {
+          const response = await fetch('/api/tags', {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ id: tagId }),
+          });
+
+          if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.error || 'Failed to delete tag');
+          }
+
+          // Remove the tag from the DOM
+          const tagRow = document.querySelector(`[data-tag-id="${tagId}"]`);
+          if (tagRow) {
+            tagRow.remove();
+          }
+
+          // Show success message
+          if (successMsg) {
+            successMsg.textContent = `Tag "${tagName}" deleted successfully!`;
+            successMsg.classList.remove('hidden');
+          }
+
+          // Reload page after a short delay
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
+
+        } catch (error) {
+          alert(error instanceof Error ? error.message : 'Failed to delete tag');
+        }
+      });
+    });
+  </script>
+</AdminLayout>

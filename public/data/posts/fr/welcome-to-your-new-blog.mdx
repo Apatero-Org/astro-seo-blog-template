@@ -1,0 +1,147 @@
+---
+title: "Bienvenue sur votre nouveau blog Astro"
+description: "Démarrez avec votre nouveau modèle de blog SEO Astro. Apprenez à créer des articles, personnaliser votre blog et le faire vôtre."
+publishDate: 2025-10-30T09:01:25.159Z
+updateDate: 2025-10-30T09:01:25.161Z
+author: "kevin"
+category: "getting-started"
+tags: ["astro","tutorial","getting-started"]
+featured: true
+draft: false
+heroImage: "/blog-images/1761814882054-4raehv.png"
+seoTitle: "Bienvenue sur votre nouveau blog Astro"
+seoDescription: "Démarrez avec votre nouveau modèle de blog SEO Astro. Apprenez à créer des articles, personnaliser votre blog et le faire vôtre."
+seoKeywords: ""
+noindex: false
+nofollow: false
+canonicalUrl: ""
+ogTitle: "Bienvenue sur votre nouveau blog Astro"
+ogDescription: "Démarrez avec votre nouveau modèle de blog SEO Astro. Apprenez à créer des articles, personnaliser votre blog et le faire vôtre."
+ogImage: "/blog-images/1761814882054-4raehv.png"
+---
+
+# Bienvenue sur votre nouveau blog !
+
+Félicitations pour la configuration de votre nouveau modèle de blog SEO Astro ! Cet article d'exemple vous aidera à comprendre comment créer et structurer vos propres articles de blog.
+
+## Qu'est-ce que ce modèle ?
+
+Il s'agit d'un modèle de blog moderne et riche en fonctionnalités construit avec Astro. Il comprend :
+
+- **Optimisation SEO** : Meilleures pratiques intégrées pour les moteurs de recherche
+- **Mode sombre** : Changement automatique de thème
+- **Support multilingue** : Prêt pour l'internationalisation
+- **Performance rapide** : Chargements de pages ultra-rapides
+- **Personnalisation facile** : Configuration et style simples
+
+## Créer votre premier article
+
+Les articles de blog sont écrits au format MDX, qui vous permet d'utiliser à la fois Markdown et des composants React. Créez un nouveau fichier dans `public/data/posts/` avec l'extension `.mdx`.
+
+### Frontmatter
+
+Chaque article commence par le frontmatter (la section entre les marqueurs `---`) qui définit les métadonnées :
+
+```yaml
+---
+title: "Titre de votre article"
+description: "Une brève description"
+pubDate: "2025-01-15"
+author: "Votre nom"
+category: "technologie"
+tags: ["astro", "développement-web"]
+image: "/blog-images/your-image.jpg"
+featured: false
+---
+```
+
+### Rédiger du contenu
+
+Après le frontmatter, rédigez votre contenu en utilisant Markdown :
+
+- **Texte en gras** avec `**text**`
+- *Texte en italique* avec `*text*`
+- [Liens](https://astro.build) avec `[text](url)`
+- Blocs de code avec trois backticks
+
+### Exemples de code
+
+Vous pouvez inclure du code avec coloration syntaxique :
+
+```javascript
+function greet(name) {
+  console.log(`Bonjour, ${name} !`);
+}
+
+greet("Monde");
+```
+
+```python
+def greet(name):
+    print(f"Bonjour, {name} !")
+
+greet("Monde")
+```
+
+## Organiser votre contenu
+
+### Catégories
+
+Organisez les articles par catégorie. Définissez les catégories dans `public/data/categories/`.
+
+### Étiquettes
+
+Ajoutez plusieurs étiquettes à chaque article pour une meilleure découvrabilité. Définissez les étiquettes dans `public/data/tags/`.
+
+### Images
+
+Stockez les images dans `public/blog-images/` et référencez-les dans vos articles :
+
+```markdown
+![Texte alternatif](/blog-images/your-image.jpg)
+```
+
+## Personnaliser votre blog
+
+### Configuration du site
+
+Modifiez `public/data/settings/site-config.json` pour personnaliser :
+
+- Titre et description du site
+- Informations sur l'auteur
+- Liens vers les réseaux sociaux
+- Éléments de navigation
+- Fonctionnalités (mode sombre, recherche, RSS)
+- Suivi analytique
+
+### Style
+
+Le modèle utilise Tailwind CSS. Personnalisez les couleurs, les polices et les styles dans `tailwind.config.mjs`.
+
+### Composants
+
+Créez des composants personnalisés dans `src/components/` et utilisez-les dans vos articles MDX.
+
+## Prochaines étapes
+
+1. **Supprimez cet article d'exemple** une fois que vous êtes prêt
+2. **Créez votre premier vrai article** dans `public/data/posts/`
+3. **Personnalisez la configuration du site** avec vos informations
+4. **Ajoutez votre image de marque** (logo, couleurs, polices)
+5. **Déployez votre blog** sur votre plateforme d'hébergement préférée
+
+## Besoin d'aide ?
+
+- Lisez le [README complet](https://github.com/Apatero-Org/astro-seo-blog-template)
+- Consultez la [documentation Astro](https://docs.astro.build)
+- Parcourez la [documentation MDX](https://mdxjs.com)
+
+## Conclusion
+
+Vous êtes prêt à commencer à bloguer ! Ce modèle fournit tout ce dont vous avez besoin pour un blog professionnel. Concentrez-vous sur la création d'un contenu de qualité et laissez le modèle gérer les détails techniques.
+
+Bonne écriture !
+
+---
+
+*Ceci est un article d'exemple. N'hésitez pas à le supprimer et à créer votre propre contenu.*

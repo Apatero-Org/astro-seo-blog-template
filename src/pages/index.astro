@@ -1,0 +1,56 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import HeroSection from '../components/landing/HeroSection.astro';
+import ShowcaseSection from '../components/landing/ShowcaseSection.astro';
+import ProcessSection from '../components/landing/ProcessSection.astro';
+import BlogSection from '../components/landing/BlogSection.astro';
+import FAQSection from '../components/landing/FAQSection.astro';
+---
+
+<BaseLayout
+  title="Astro SEO Blog Template - Fast, Modern, Open Source"
+  description="A modern, feature-rich, and SEO-optimized blog template built with Astro. Perfect for developers and content creators. Open source and free to use."
+  hideSearch={false}
+  hideThemeToggle={false}
+  siteName="Astro SEO Blog Template"
+>
+  <HeroSection />
+  <ShowcaseSection />
+  <ProcessSection />
+  <BlogSection />
+  <FAQSection />
+
+  <!-- Schema.org Structured Data -->
+  <script type="application/ld+json" is:inline>
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Astro SEO Blog Template",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "Web",
+      "description": "Modern, SEO-optimized blog template built with Astro. Features dark mode, search, RSS feeds, and multi-language support.",
+      "url": "https://yourdomain.com",
+      "author": {
+        "@type": "Person",
+        "name": "Kevin Gabeci",
+        "url": "https://kevingabeci.com"
+      },
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD",
+        "description": "Free and open source under MIT License"
+      },
+      "featureList": [
+        "SEO Optimized",
+        "Dark Mode Support",
+        "Multi-language Ready",
+        "MDX Support",
+        "Search Functionality",
+        "RSS Feeds",
+        "Sitemap Generation",
+        "Responsive Design"
+      ]
+    }
+  </script>
+</BaseLayout>

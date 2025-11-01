@@ -1,0 +1,100 @@
+---
+// Reading progress indicator - shows how far user has scrolled through article
+---
+
+<div id="reading-progress" class="reading-progress" aria-label="Reading progress">
+  <div class="reading-progress-bar"></div>
+</div>
+
+<style>
+  .reading-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: transparent;
+    z-index: 9999;
+    pointer-events: none;
+  }
+
+  .reading-progress-bar {
+    height: 100%;
+    width: 0%;
+    background: #000000;
+    transition: width 0.1s ease-out;
+    transform-origin: left;
+  }
+
+  /* Hide on very small screens to save space */
+  @media (max-width: 480px) {
+    .reading-progress {
+      height: 2px;
+    }
+  }
+
+  /* Reduce motion for accessibility */
+  @media (prefers-reduced-motion: reduce) {
+    .reading-progress-bar {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  function initReadingProgress() {
+    const progressBar = document.querySelector('.reading-progress-bar') as HTMLElement;
+
+    if (!progressBar) return;
+
+    // Calculate reading progress based on scroll position
+    function updateProgress() {
+      // Get the article element or use document if not found
+      const article = document.querySelector('article') || document.documentElement;
+
+      // Calculate how far we've scrolled as a percentage
+      const windowHeight = window.innerHeight;
+      const documentHeight = article.scrollHeight;
+      const scrollTop = window.scrollY || window.pageYOffset;
+
+      // Calculate percentage (accounting for viewport height)
+      const maxScroll = documentHeight - windowHeight;
+      const scrollPercentage = Math.min((scrollTop / maxScroll) * 100, 100);
+
+      // Update progress bar width
+      progressBar.style.width = `${scrollPercentage}%`;
+    }
+
+    // Throttle scroll events for performance
+    let ticking = false;
+
+    function requestUpdateProgress() {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          updateProgress();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    }
+
+    // Update on scroll
+    window.addEventListener('scroll', requestUpdateProgress, { passive: true });
+
+    // Update on resize (viewport size change)
+    window.addEventListener('resize', requestUpdateProgress, { passive: true });
+
+    // Initial calculation
+    updateProgress();
+  }
+
+  // Initialize on page load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initReadingProgress);
+  } else {
+    initReadingProgress();
+  }
+
+  // Re-initialize on Astro page navigation
+  document.addEventListener('astro:page-load', initReadingProgress);
+</script>

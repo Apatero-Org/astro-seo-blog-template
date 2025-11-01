@@ -1,0 +1,147 @@
+---
+title: "새로운 Astro 블로그에 오신 것을 환영합니다"
+description: "새로운 Astro SEO 블로그 템플릿을 시작하세요. 게시물을 만들고, 블로그를 사용자 정의하고, 자신만의 블로그로 만드는 방법을 배우세요."
+publishDate: 2025-10-30T09:01:25.159Z
+updateDate: 2025-10-30T09:01:25.161Z
+author: "kevin"
+category: "getting-started"
+tags: ["astro","tutorial","getting-started"]
+featured: true
+draft: false
+heroImage: "/blog-images/1761814882054-4raehv.png"
+seoTitle: "새로운 Astro 블로그에 오신 것을 환영합니다"
+seoDescription: "새로운 Astro SEO 블로그 템플릿을 시작하세요. 게시물을 만들고, 블로그를 사용자 정의하고, 자신만의 블로그로 만드는 방법을 배우세요."
+seoKeywords: ""
+noindex: false
+nofollow: false
+canonicalUrl: ""
+ogTitle: "새로운 Astro 블로그에 오신 것을 환영합니다"
+ogDescription: "새로운 Astro SEO 블로그 템플릿을 시작하세요. 게시물을 만들고, 블로그를 사용자 정의하고, 자신만의 블로그로 만드는 방법을 배우세요."
+ogImage: "/blog-images/1761814882054-4raehv.png"
+---
+
+# 새로운 블로그에 오신 것을 환영합니다!
+
+새로운 Astro SEO 블로그 템플릿을 설정하신 것을 축하합니다! 이 예제 게시물은 자신만의 블로그 게시물을 만들고 구조화하는 방법을 이해하는 데 도움이 될 것입니다.
+
+## 이 템플릿은 무엇인가요?
+
+이것은 Astro로 구축된 현대적이고 기능이 풍부한 블로그 템플릿입니다. 다음이 포함됩니다:
+
+- **SEO 최적화**: 검색 엔진을 위한 내장 모범 사례
+- **다크 모드**: 자동 테마 전환
+- **다국어 지원**: 국제화 준비 완료
+- **빠른 성능**: 초고속 페이지 로딩
+- **손쉬운 커스터마이징**: 간단한 구성 및 스타일링
+
+## 첫 번째 게시물 만들기
+
+블로그 게시물은 MDX 형식으로 작성되며, 이를 통해 Markdown과 React 컴포넌트를 모두 사용할 수 있습니다. `public/data/posts/`에 `.mdx` 확장자를 가진 새 파일을 만드세요.
+
+### 프론트매터
+
+모든 게시물은 메타데이터를 정의하는 프론트매터(`---` 마커 사이의 섹션)로 시작됩니다:
+
+```yaml
+---
+title: "게시물 제목"
+description: "간단한 설명"
+pubDate: "2025-01-15"
+author: "작성자 이름"
+category: "기술"
+tags: ["astro", "웹-개발"]
+image: "/blog-images/your-image.jpg"
+featured: false
+---
+```
+
+### 콘텐츠 작성
+
+프론트매터 다음에 Markdown을 사용하여 콘텐츠를 작성하세요:
+
+- **굵은 텍스트**는 `**text**`로
+- *기울임 텍스트*는 `*text*`로
+- [링크](https://astro.build)는 `[text](url)`로
+- 코드 블록은 백틱 3개로
+
+### 코드 예제
+
+구문 강조가 적용된 코드를 포함할 수 있습니다:
+
+```javascript
+function greet(name) {
+  console.log(`안녕하세요, ${name}!`);
+}
+
+greet("세계");
+```
+
+```python
+def greet(name):
+    print(f"안녕하세요, {name}!")
+
+greet("세계")
+```
+
+## 콘텐츠 구성하기
+
+### 카테고리
+
+카테고리별로 게시물을 구성하세요. `public/data/categories/`에서 카테고리를 정의하세요.
+
+### 태그
+
+더 나은 검색 가능성을 위해 각 게시물에 여러 태그를 추가하세요. `public/data/tags/`에서 태그를 정의하세요.
+
+### 이미지
+
+`public/blog-images/`에 이미지를 저장하고 게시물에서 참조하세요:
+
+```markdown
+![대체 텍스트](/blog-images/your-image.jpg)
+```
+
+## 블로그 커스터마이징
+
+### 사이트 구성
+
+다음을 커스터마이징하려면 `public/data/settings/site-config.json`을 편집하세요:
+
+- 사이트 제목 및 설명
+- 작성자 정보
+- 소셜 미디어 링크
+- 내비게이션 항목
+- 기능 (다크 모드, 검색, RSS)
+- 분석 추적
+
+### 스타일링
+
+템플릿은 Tailwind CSS를 사용합니다. `tailwind.config.mjs`에서 색상, 글꼴 및 스타일을 커스터마이징하세요.
+
+### 컴포넌트
+
+`src/components/`에 사용자 정의 컴포넌트를 만들고 MDX 게시물에서 사용하세요.
+
+## 다음 단계
+
+1. **준비가 되면 이 예제 게시물을 삭제**하세요
+2. **첫 번째 실제 게시물을 만들기** `public/data/posts/`에
+3. **사이트 구성을 커스터마이징** 귀하의 정보로
+4. **브랜딩 추가** (로고, 색상, 글꼴)
+5. **블로그 배포** 선호하는 호스팅 플랫폼에
+
+## 도움이 필요하신가요?
+
+- [전체 README](https://github.com/Apatero-Org/astro-seo-blog-template)를 읽어보세요
+- [Astro 문서](https://docs.astro.build)를 확인하세요
+- [MDX 문서](https://mdxjs.com)를 둘러보세요
+
+## 결론
+
+이제 블로깅을 시작할 준비가 되었습니다! 이 템플릿은 전문 블로그에 필요한 모든 것을 제공합니다. 훌륭한 콘텐츠를 만드는 데 집중하고, 기술적인 세부 사항은 템플릿이 처리하도록 하세요.
+
+즐거운 글쓰기 되세요!
+
+---
+
+*이것은 예제 게시물입니다. 자유롭게 삭제하고 자신만의 콘텐츠를 만드세요.*

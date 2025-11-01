@@ -1,0 +1,254 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { sortPostsByDate, formatDate } from '../../../lib/utils';
+import { SITE_CONFIG } from '../../../data/site-config';
+import { getPublishedBlogPosts } from '../../../lib/posts';
+import { getTags } from '../../../lib/data';
+import { normalizeTagName } from '../../../lib/tags';
+import { DEFAULT_LANGUAGE } from '../../../config/languages';
+import { Image } from 'astro:assets';
+
+// Enable prerendering for this page
+export const prerender = true;
+
+// Static paths for all tags
+export async function getStaticPaths() {
+  const allPosts = await getPublishedBlogPosts();
+  const tags = [...new Set(allPosts.flatMap(post => post.data.tags))];
+
+  // Only create pages for tags that have posts after normalization
+  return tags
+    .map(tag => normalizeTagName(tag))
+    .filter((normalizedTag, index, self) => {
+      // Remove duplicates after normalization
+      if (self.indexOf(normalizedTag) !== index) return false;
+
+      // Verify this tag actually has posts
+      const postsWithTag = allPosts.filter(post =>
+        (post.data.tags || []).some(postTag => normalizeTagName(postTag) === normalizedTag)
+      );
+      return postsWithTag.length > 0;
+    })
+    .map(tag => ({
+      params: { tag }
+    }));
+}
+
+// Function imported from lib/tags.ts
+
+// Get the tag from URL parameter
+const { tag: urlTag } = Astro.params;
+
+// Get all posts and find matching posts
+const allPosts = await getPublishedBlogPosts();
+const postsWithTag = allPosts.filter(post =>
+  (post.data.tags || []).some(postTag => normalizeTagName(postTag) === urlTag)
+);
+
+const sortedPosts = sortPostsByDate(postsWithTag);
+
+// Remove the duplicate function definition since we moved it above
+
+// Get tags from JSON file for canonical names
+const tagsData = await getTags();
+
+// Get all tags for sidebar with normalized counting
+const allTags = allPosts.flatMap(post => post.data.tags);
+const normalizedTagCounts = new Map();
+allTags.forEach(tag => {
+  const normalized = normalizeTagName(tag);
+  normalizedTagCounts.set(normalized, (normalizedTagCounts.get(normalized) || 0) + 1);
+});
+
+// Get popular tags using canonical names from JSON file
+const popularTags = tagsData
+  .map(tag => ({
+    name: tag.name, // Use the canonical name from JSON file
+    count: normalizedTagCounts.get(normalizeTagName(tag.name)) || 0
+  }))
+  .filter(tag => tag.count > 0) // Only show tags that are actually used
+  .sort((a, b) => b.count - a.count)
+  .slice(0, 20)
+  .map(tag => tag.name);
+
+// Format tag name for display (find the original case)
+const tagDisplay = allTags.find(t => normalizeTagName(t) === urlTag) || urlTag;
+---
+
+<BaseLayout
+  title={`Articles tagged "${tagDisplay}" - ${SITE_CONFIG.title}`}
+  description={`Browse all articles tagged with "${tagDisplay}" on ${SITE_CONFIG.title}`}
+  siteName={SITE_CONFIG.title}
+  currentLanguage={DEFAULT_LANGUAGE}
+  pageType="blog-tag"
+  pageIdentifier={urlTag}
+  breadcrumb={[
+    { name: 'Blog', url: '/blog' },
+    { name: 'Tag', url: '/blog' },
+    { name: tagDisplay, url: `/blog/tag/${urlTag}` }
+  ]}
+>
+  <div class="container py-12">
+    <div class="grid lg:grid-cols-[1fr,320px] gap-12">
+      <!-- Main Content -->
+      <div>
+        <!-- Header -->
+        <div class="mb-8">
+          <div class="flex items-center gap-3 mb-4">
+            <a href="/blog" class="text-text-muted hover:text-text transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+              </svg>
+            </a>
+            <span class="text-text-muted">/</span>
+            <span class="text-text-muted">Tag</span>
+            <span class="text-text-muted">/</span>
+            <span class="font-medium">#{tagDisplay}</span>
+          </div>
+          <h1 class="text-3xl font-display font-bold mb-2">
+            Articles tagged "{tagDisplay}"
+          </h1>
+          <p class="text-text-muted">
+            {sortedPosts.length} {sortedPosts.length === 1 ? 'article' : 'articles'} with this tag
+          </p>
+        </div>
+
+        <!-- Posts List -->
+        {sortedPosts.length > 0 ? (
+          <div class="space-y-8">
+            {sortedPosts.map((post) => (
+              <article class="border-b pb-8">
+                <a href={`/blog/${post.slug}`} class="block group">
+                  <div class="flex gap-6">
+                    {/* Thumbnail */}
+                    {post.data.heroImage && (
+                      <div class="w-48 h-32 flex-shrink-0 overflow-hidden rounded-lg">
+                        <Image
+                          src={post.data.heroImage}
+                          alt={post.data.heroImageAlt || `${post.data.title} - Tutorial tagged with ${tagDisplay}`}
+                          width={768}
+                          height={512}
+                          class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          loading="lazy"
+                          format="webp"
+                          quality={85}
+                        />
+                      </div>
+                    )}
+                    
+                    {/* Content */}
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center gap-2 text-xs text-text-muted mb-3">
+                        <span class="font-bold uppercase">{post.data.category}</span>
+                        <span>•</span>
+                        <span>{formatDate(post.data.publishDate)}</span>
+                        {post.data.featured && (
+                          <>
+                            <span>•</span>
+                            <span class="px-2 py-0.5 bg-text text-background text-xs rounded">FEATURED</span>
+                          </>
+                        )}
+                      </div>
+                      
+                      <h2 class="text-xl font-semibold mb-2 group-hover:opacity-70 transition-opacity">
+                        {post.data.title}
+                      </h2>
+                      
+                      <p class="text-sm text-text-muted mb-3 line-clamp-2">
+                        {post.data.description}
+                      </p>
+                      
+                      <div class="flex items-center justify-between">
+                        <div class="flex flex-wrap gap-2">
+                          {(post.data.tags || []).slice(0, 4).map((postTag) => (
+                            <a
+                              href={`/blog/tag/${normalizeTagName(postTag)}`}
+                              class={`text-xs ${normalizeTagName(postTag) === urlTag ? 'text-text font-medium' : 'text-text-muted hover:text-text'}`}
+                            >
+                              #{postTag}
+                            </a>
+                          ))}
+                        </div>
+                        <span class="text-sm text-text-muted group-hover:text-text transition-colors">
+                          Read more →
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </a>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div class="text-center py-12 border border-border rounded-lg">
+            <p class="text-text-muted mb-4">No articles found with this tag.</p>
+            <a href="/blog" class="inline-flex items-center gap-2 px-4 py-2 border border-border rounded-full hover:bg-surface transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+              </svg>
+              Back to All Blogs
+            </a>
+          </div>
+        )}
+      </div>
+
+      <!-- Sidebar -->
+      <aside class="space-y-8 lg:sticky lg:top-8 lg:h-fit">
+        <!-- Back to Home -->
+        <div>
+          <a href="/blog" class="inline-flex items-center gap-2 px-4 py-2 border border-border rounded-full text-text hover:bg-text hover:text-background transition-all text-sm font-medium w-full justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            Back to All Blogs
+          </a>
+        </div>
+
+        <!-- Related Tags -->
+        <div>
+          <h3 class="text-sm font-bold uppercase mb-4">Popular Tags</h3>
+          <div class="flex flex-wrap gap-2">
+            {popularTags.map((tagName) => {
+              const isActive = normalizeTagName(tagName) === urlTag;
+              const count = normalizedTagCounts.get(normalizeTagName(tagName)) || 0;
+              return (
+                <a
+                  href={`/blog/tag/${normalizeTagName(tagName)}`}
+                  class={`px-3 py-1 text-sm border border-border rounded-full transition-all ${
+                    isActive ? 'bg-text text-background' : 'hover:bg-text hover:text-background'
+                  }`}
+                >
+                  #{tagName} ({count})
+                </a>
+              );
+            })}
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="border-t pt-8">
+          <h3 class="text-sm font-bold uppercase mb-4">Tag Stats</h3>
+          <div class="space-y-3">
+            <div class="flex justify-between">
+              <span class="text-sm text-text-muted">Articles with tag</span>
+              <span class="text-sm font-medium">{sortedPosts.length}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-sm text-text-muted">Total tags</span>
+              <span class="text-sm font-medium">{tagsData.length}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-sm text-text-muted">Most used tag</span>
+              <span class="text-sm font-medium">
+                {popularTags[0] || 'N/A'}
+              </span>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</BaseLayout>

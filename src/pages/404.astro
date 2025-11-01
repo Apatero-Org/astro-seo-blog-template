@@ -1,0 +1,92 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+export const prerender = false;
+
+// Handle dynamic 404 responses for SSR
+if (Astro.url.pathname !== '/404') {
+  return new Response(null, {
+    status: 404,
+    statusText: 'Not Found'
+  });
+}
+---
+
+<BaseLayout
+  title="404 - Page Not Found"
+  description="The page you're looking for doesn't exist. Explore our blog or check out the Astro SEO Blog Template."
+  noindex={true}
+>
+  <div class="container py-12">
+    <div class="max-w-4xl mx-auto">
+      <!-- Main 404 Section -->
+      <div class="text-center mb-12">
+        <h1 class="text-6xl font-bold mb-4">404</h1>
+        <h2 class="text-3xl font-semibold mb-4">Page Not Found</h2>
+        <p class="text-lg text-text-muted mb-8 max-w-2xl mx-auto">
+          Sorry, the page you're looking for doesn't exist or has been moved.
+        </p>
+
+        <!-- Navigation Options -->
+        <div class="flex flex-wrap gap-4 justify-center mb-12">
+          <a href="/" class="px-6 py-3 bg-text text-background rounded-full font-semibold hover:bg-text/90 transition-colors">
+            Go Home
+          </a>
+          <a href="/blog" class="px-6 py-3 border-2 border-text rounded-full font-semibold hover:bg-text hover:text-background transition-colors">
+            Browse Blog
+          </a>
+          <a href="/about" class="px-6 py-3 border-2 border-text rounded-full font-semibold hover:bg-text hover:text-background transition-colors">
+            About
+          </a>
+        </div>
+      </div>
+
+      <!-- FAQ Section -->
+      <div class="bg-surface rounded-lg p-8">
+        <h3 class="text-2xl font-semibold mb-6 text-center">Why Am I Seeing This Page?</h3>
+        <div class="grid md:grid-cols-2 gap-6">
+          <div class="space-y-6">
+            <div>
+              <h4 class="font-semibold mb-2">Broken Link</h4>
+              <p class="text-text-muted text-sm">
+                You might have clicked on a broken or outdated link. Some URLs may have changed.
+              </p>
+            </div>
+            <div>
+              <h4 class="font-semibold mb-2">Typing Error</h4>
+              <p class="text-text-muted text-sm">
+                Check the URL in your browser's address bar for any typos.
+              </p>
+            </div>
+            <div>
+              <h4 class="font-semibold mb-2">Content Moved</h4>
+              <p class="text-text-muted text-sm">
+                The page might have moved to a new location or been removed.
+              </p>
+            </div>
+          </div>
+          <div class="space-y-6">
+            <div>
+              <h4 class="font-semibold mb-2">Search Instead</h4>
+              <p class="text-text-muted text-sm">
+                Try searching for what you're looking for using the blog navigation.
+              </p>
+            </div>
+            <div>
+              <h4 class="font-semibold mb-2">Bookmark Issue</h4>
+              <p class="text-text-muted text-sm">
+                If you used an old bookmark, the page structure might have changed.
+              </p>
+            </div>
+            <div>
+              <h4 class="font-semibold mb-2">Pro Tip</h4>
+              <p class="text-text-muted text-sm">
+                Explore our <a href="/blog" class="hover:underline">latest blog posts</a> or return to the <a href="/" class="hover:underline">homepage</a>.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>

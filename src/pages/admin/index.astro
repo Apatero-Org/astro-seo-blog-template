@@ -1,0 +1,154 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { formatDate } from '../../lib/utils';
+import { getCategories, getTags } from '../../lib/data';
+import { getAllBlogPosts, getPublishedBlogPosts } from '../../lib/posts';
+import fs from 'fs/promises';
+import path from 'path';
+
+// Get all posts using the same method as other pages
+const allPosts = await getAllBlogPosts();
+const publishedPostsList = await getPublishedBlogPosts();
+
+const sortedPosts = allPosts.sort((a, b) =>
+  b.data.publishDate.valueOf() - a.data.publishDate.valueOf()
+);
+
+// Get stats
+const totalPosts = allPosts.length;
+const publishedPosts = publishedPostsList.length;
+const draftPosts = totalPosts - publishedPosts;
+
+// Get categories
+const categories = await getCategories();
+
+// Get tags using the same method as other pages
+const tags = await getTags();
+
+// Get authors count
+let authorsCount = 0;
+try {
+  const authorsPath = path.join(process.cwd(), 'public', 'data', 'authors', 'authors.json');
+  const authorsData = JSON.parse(await fs.readFile(authorsPath, 'utf-8'));
+  authorsCount = authorsData.authors.length;
+} catch (e) {
+  console.error('Error loading authors:', e);
+}
+---
+
+<AdminLayout title="Dashboard" activeNav="dashboard">
+  <div class="p-6 lg:p-8 h-full">
+    <!-- Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl lg:text-4xl font-display font-bold mb-1">DASHBOARD</h1>
+      <p class="text-sm text-text-muted">Overview of your blog</p>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="mb-10">
+      <h2 class="text-xl lg:text-2xl font-display font-bold mb-4 uppercase">Content Stats</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Total Posts -->
+        <div class="border-b border-border pb-3 group hover:border-text transition-colors">
+          <div class="text-xs text-text-muted mb-1 uppercase tracking-wider">Total Posts</div>
+          <div class="text-3xl font-display font-bold">{totalPosts}</div>
+        </div>
+
+        <!-- Published Posts -->
+        <div class="border-b border-border pb-3 group hover:border-text transition-colors">
+          <div class="text-xs text-text-muted mb-1 uppercase tracking-wider">Published</div>
+          <div class="text-3xl font-display font-bold">{publishedPosts}</div>
+        </div>
+
+        <!-- Draft Posts -->
+        <div class="border-b border-border pb-3 group hover:border-text transition-colors">
+          <div class="text-xs text-text-muted mb-1 uppercase tracking-wider">Drafts</div>
+          <div class="text-3xl font-display font-bold">{draftPosts}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="mb-10">
+      <h2 class="text-xl lg:text-2xl font-display font-bold mb-4 uppercase">Organization</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Categories -->
+        <div class="border-b border-border pb-3 group hover:border-text transition-colors">
+          <div class="text-xs text-text-muted mb-1 uppercase tracking-wider">Categories</div>
+          <div class="text-3xl font-display font-bold">{categories.length}</div>
+        </div>
+
+        <!-- Tags -->
+        <div class="border-b border-border pb-3 group hover:border-text transition-colors">
+          <div class="text-xs text-text-muted mb-1 uppercase tracking-wider">Tags</div>
+          <div class="text-3xl font-display font-bold">{tags.length}</div>
+        </div>
+
+        <!-- Authors -->
+        <div class="border-b border-border pb-3 group hover:border-text transition-colors">
+          <div class="text-xs text-text-muted mb-1 uppercase tracking-wider">Authors</div>
+          <div class="text-3xl font-bold">{authorsCount}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Posts -->
+    <div class="mb-8">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl lg:text-2xl font-display font-bold uppercase">Recent Posts</h2>
+        <a href="/admin/posts" class="text-xs text-text-muted hover:text-text transition-colors uppercase tracking-wider">
+          View All →
+        </a>
+      </div>
+
+      {sortedPosts.length > 0 ? (
+        <div class="space-y-0">
+          {sortedPosts.slice(0, 5).map((post, index) => (
+            <div class="flex items-center justify-between py-4 border-b border-border group hover:border-text transition-colors">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-3">
+                  <span class="text-xl font-display font-bold text-text opacity-20">{String(index + 1).padStart(2, '0')}</span>
+                  <div class="flex-1 min-w-0">
+                    <h3 class="font-bold text-base truncate group-hover:opacity-70 transition-opacity">{post.data.title}</h3>
+                    <div class="flex items-center gap-2 mt-1 text-xs text-text-muted">
+                      <span>{post.data.category}</span>
+                      <span>•</span>
+                      <span>{formatDate(post.data.publishDate)}</span>
+                      <span>•</span>
+                      {post.data.draft ? (
+                        <span class="px-2 py-0.5 bg-surface border border-border rounded text-xs">DRAFT</span>
+                      ) : (
+                        <span class="px-2 py-0.5 bg-text text-background rounded text-xs">PUB</span>
+                      )}
+                      {post.data.featured && (
+                        <>
+                          <span>•</span>
+                          <span class="px-2 py-0.5 border border-text rounded text-xs">FTD</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="flex gap-3 ml-4">
+                <a href={`/blog/${post.slug}`} target="_blank" class="text-xs hover:opacity-70 transition-opacity uppercase tracking-wider">
+                  View
+                </a>
+                <a href={`/admin/edit/${post.slug}`} class="text-xs hover:opacity-70 transition-opacity uppercase tracking-wider">
+                  Edit
+                </a>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div class="py-8 text-center border-t border-border">
+          <p class="text-text-muted">No posts yet. Create your first post to get started.</p>
+          <a href="/admin/new" class="inline-block mt-4 px-6 py-3 bg-text text-background rounded-full font-bold hover:bg-text/90 transition-all hover:scale-105">
+            CREATE POST
+          </a>
+        </div>
+      )}
+    </div>
+  </div>
+</AdminLayout>

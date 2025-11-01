@@ -1,0 +1,226 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { getCategories } from '../../lib/data';
+import { getPublishedBlogPosts } from '../../lib/posts';
+
+// Get categories
+const categoriesData = await getCategories();
+
+// Get all posts to count usage
+const allPosts = await getPublishedBlogPosts();
+
+// Count posts per category
+const postCountMap = new Map();
+allPosts.forEach(post => {
+  const category = post.data.category;
+  if (category) {
+    postCountMap.set(category, (postCountMap.get(category) || 0) + 1);
+  }
+});
+
+// Get categories from JSON file and add post counts
+const categories = categoriesData.map(cat => ({
+  ...cat,
+  postCount: postCountMap.get(cat.name) || 0
+})).sort((a, b) => a.name.localeCompare(b.name));
+
+const totalCategories = categories.length;
+const usedCategories = categories.filter(c => c.postCount > 0).length;
+---
+
+<AdminLayout title="Categories" activeNav="categories">
+  <div class="p-6 lg:p-8 h-full">
+    <!-- Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl lg:text-4xl font-display font-bold mb-1">CATEGORIES</h1>
+      <p class="text-sm text-text-muted">Manage your blog categories</p>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-2 gap-6 mb-8">
+      <div class="border-b border-border pb-3">
+        <div class="text-xs text-text-muted mb-1 uppercase tracking-wider">Total</div>
+        <div class="text-2xl font-display font-bold">{totalCategories}</div>
+      </div>
+      <div class="border-b border-border pb-3">
+        <div class="text-xs text-text-muted mb-1 uppercase tracking-wider">In Use</div>
+        <div class="text-2xl font-display font-bold">{usedCategories}</div>
+      </div>
+    </div>
+
+    <!-- Add New Category -->
+    <div class="mb-8">
+      <h2 class="text-xl font-display font-bold mb-4 uppercase">Add Category</h2>
+      <form id="add-category-form" class="flex gap-3 pb-4 border-b border-border">
+        <input
+          type="text"
+          id="category-name"
+          placeholder="Enter category name..."
+          class="flex-1 px-4 py-2 bg-background border border-border rounded focus:outline-none focus:border-text"
+          required
+        />
+        <button
+          type="submit"
+          class="px-6 py-2 bg-text text-background rounded-full font-bold hover:bg-text/90 transition-all hover:scale-105"
+        >
+          ADD
+        </button>
+      </form>
+      <div id="error-message" class="mt-3 text-sm text-red-500 hidden"></div>
+      <div id="success-message" class="mt-3 text-sm text-green-500 hidden"></div>
+    </div>
+
+    <!-- Categories List -->
+    <div class="mb-8">
+      <h2 class="text-xl font-display font-bold mb-4 uppercase">All Categories</h2>
+      {categories.length > 0 ? (
+        <div class="space-y-0" id="categories-list">
+          {categories.map((category, index) => (
+            <div class="flex items-center justify-between py-4 border-b border-border group hover:border-text transition-colors" data-category-id={category.id}>
+              <div class="flex items-center gap-3">
+                <span class="text-xl font-display font-bold text-text opacity-20">{String(index + 1).padStart(2, '0')}</span>
+                <div>
+                  <div class="font-bold">{category.name}</div>
+                  <div class="text-xs text-text-muted">
+                    {category.postCount} {category.postCount === 1 ? 'post' : 'posts'}
+                  </div>
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                {category.postCount > 0 && (
+                  <a
+                    href={`/admin/posts?category=${encodeURIComponent(category.name)}`}
+                    class="text-xs hover:opacity-70 transition-opacity uppercase tracking-wider"
+                  >
+                    View
+                  </a>
+                )}
+                <button
+                  type="button"
+                  data-delete-category={category.id}
+                  data-category-name={category.name}
+                  data-post-count={category.postCount}
+                  class="text-xs hover:text-red-500 transition-colors uppercase tracking-wider"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div class="py-12 text-center border-t border-border">
+          <p class="text-text-muted">No categories found. Add your first category above.</p>
+        </div>
+      )}
+    </div>
+  </div>
+
+  <script>
+    // Add category form
+    const form = document.getElementById('add-category-form') as HTMLFormElement;
+    const input = document.getElementById('category-name') as HTMLInputElement;
+    const errorMsg = document.getElementById('error-message');
+    const successMsg = document.getElementById('success-message');
+
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const name = input.value.trim();
+      if (!name) return;
+
+      errorMsg?.classList.add('hidden');
+      successMsg?.classList.add('hidden');
+
+      try {
+        const response = await fetch('/api/categories', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ name }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to add category');
+        }
+
+        // Show success message
+        if (successMsg) {
+          successMsg.textContent = `Category "${name}" added successfully!`;
+          successMsg.classList.remove('hidden');
+        }
+
+        // Clear input
+        input.value = '';
+
+        // Reload page after a short delay
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+
+      } catch (error) {
+        if (errorMsg) {
+          errorMsg.textContent = error instanceof Error ? error.message : 'Failed to add category';
+          errorMsg.classList.remove('hidden');
+        }
+      }
+    });
+
+    // Delete category buttons
+    document.querySelectorAll('[data-delete-category]').forEach(button => {
+      button.addEventListener('click', async (e) => {
+        const target = e.currentTarget as HTMLElement;
+        const categoryId = target.dataset.deleteCategory;
+        const categoryName = target.dataset.categoryName;
+        const postCount = parseInt(target.dataset.postCount || '0');
+
+        if (postCount > 0) {
+          alert(`Cannot delete "${categoryName}" because it has ${postCount} post(s). Please reassign or delete the posts first.`);
+          return;
+        }
+
+        if (!confirm(`Are you sure you want to delete the category "${categoryName}"?`)) {
+          return;
+        }
+
+        try {
+          const response = await fetch('/api/categories', {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ id: categoryId }),
+          });
+
+          if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.error || 'Failed to delete category');
+          }
+
+          // Remove the category from the DOM
+          const categoryRow = document.querySelector(`[data-category-id="${categoryId}"]`);
+          if (categoryRow) {
+            categoryRow.remove();
+          }
+
+          // Show success message
+          if (successMsg) {
+            successMsg.textContent = `Category "${categoryName}" deleted successfully!`;
+            successMsg.classList.remove('hidden');
+          }
+
+          // Reload page after a short delay
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
+
+        } catch (error) {
+          alert(error instanceof Error ? error.message : 'Failed to delete category');
+        }
+      });
+    });
+  </script>
+</AdminLayout>

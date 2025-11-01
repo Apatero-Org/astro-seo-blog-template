@@ -1,0 +1,365 @@
+---
+// Search Modal Component for client-side search
+---
+
+<div id="search-modal" class="fixed inset-0 bg-black/50 z-[100] hidden items-center justify-center p-4">
+  <div class="bg-background rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+    <!-- Search Header -->
+    <div class="p-6 border-b border-border">
+      <div class="flex items-center gap-4">
+        <div class="relative flex-1">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-text-muted">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="M21 21l-4.35-4.35"></path>
+          </svg>
+          <input
+            type="text"
+            id="search-input"
+            placeholder="Search articles, tutorials, and guides..."
+            class="w-full pl-10 pr-4 py-3 bg-surface border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            autocomplete="off"
+          />
+        </div>
+        <button
+          id="search-close"
+          class="p-2 hover:bg-surface rounded-lg transition-colors"
+          aria-label="Close search"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Search Results -->
+    <div id="search-results" class="overflow-y-auto max-h-96">
+      <!-- Loading state -->
+      <div id="search-loading" class="p-6 text-center text-text-muted hidden">
+        <svg class="animate-spin h-6 w-6 mx-auto mb-2" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <p>Searching...</p>
+      </div>
+
+      <!-- Empty state -->
+      <div id="search-empty" class="p-6 text-center text-text-muted">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-3 opacity-50">
+          <circle cx="11" cy="11" r="8"></circle>
+          <path d="M21 21l-4.35-4.35"></path>
+        </svg>
+        <p class="text-lg font-medium mb-2">Search our blog</p>
+        <p class="text-sm">Find tutorials, guides, and articles across all topics</p>
+      </div>
+
+      <!-- No results state -->
+      <div id="search-no-results" class="p-6 text-center text-text-muted hidden">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-3 opacity-50">
+          <circle cx="11" cy="11" r="8"></circle>
+          <path d="M21 21l-4.35-4.35"></path>
+          <line x1="9" y1="9" x2="15" y2="15"></line>
+          <line x1="15" y1="9" x2="9" y2="15"></line>
+        </svg>
+        <p class="text-lg font-medium mb-2">No results found</p>
+        <p class="text-sm">Try different keywords or browse our categories</p>
+        <div class="flex flex-wrap gap-2 justify-center mt-4">
+          <a href="/blog/category/getting-started" class="px-3 py-1 bg-surface rounded-full text-sm hover:bg-border transition-colors">Getting Started</a>
+          <a href="/blog/category/programming" class="px-3 py-1 bg-surface rounded-full text-sm hover:bg-border transition-colors">Programming</a>
+          <a href="/blog/category/ai-image-generation" class="px-3 py-1 bg-surface rounded-full text-sm hover:bg-border transition-colors">AI</a>
+        </div>
+      </div>
+
+      <!-- Results container -->
+      <div id="search-results-container" class="p-4 space-y-3 hidden"></div>
+    </div>
+
+    <!-- Search Footer -->
+    <div class="p-4 border-t border-border text-center text-sm text-text-muted">
+      <p>Press <kbd class="px-2 py-1 bg-surface border border-border rounded text-xs">ESC</kbd> to close • <kbd class="px-2 py-1 bg-surface border border-border rounded text-xs">↑↓</kbd> to navigate</p>
+    </div>
+  </div>
+</div>
+
+<script>
+class BlogSearch {
+  private modal: HTMLElement | null = null;
+  private input: HTMLInputElement | null = null;
+  private resultsContainer: HTMLElement | null = null;
+  private searchIndex: any[] = [];
+  private currentQuery = '';
+  private selectedIndex = -1;
+
+  constructor() {
+    this.init();
+  }
+
+  async init() {
+    this.modal = document.getElementById('search-modal');
+    this.input = document.getElementById('search-input') as HTMLInputElement;
+    this.resultsContainer = document.getElementById('search-results-container');
+
+    if (!this.modal || !this.input || !this.resultsContainer) {
+      console.error('Search elements not found');
+      return;
+    }
+
+    // Load search index
+    await this.loadSearchIndex();
+
+    // Bind events
+    this.bindEvents();
+  }
+
+  async loadSearchIndex() {
+    try {
+      const response = await fetch('/api/search-index.json');
+      if (response.ok) {
+        this.searchIndex = await response.json();
+      }
+    } catch (error) {
+      console.error('Failed to load search index:', error);
+    }
+  }
+
+  bindEvents() {
+    // Open search with Ctrl+K or Cmd+K
+    document.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        this.openSearch();
+      }
+      if (e.key === 'Escape') {
+        this.closeSearch();
+      }
+    });
+
+    // Search input events
+    this.input?.addEventListener('input', (e) => {
+      const target = e.target as HTMLInputElement;
+      this.currentQuery = target.value;
+      this.performSearch(this.currentQuery);
+    });
+
+    // Keyboard navigation
+    this.input?.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        this.navigateResults(e.key === 'ArrowDown' ? 1 : -1);
+      }
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        this.selectResult();
+      }
+    });
+
+    // Close button
+    document.getElementById('search-close')?.addEventListener('click', () => {
+      this.closeSearch();
+    });
+
+    // Click outside to close
+    this.modal?.addEventListener('click', (e) => {
+      if (e.target === this.modal) {
+        this.closeSearch();
+      }
+    });
+
+    // Search trigger button (if exists)
+    const searchTrigger = document.getElementById('search-trigger');
+    searchTrigger?.addEventListener('click', () => {
+      this.openSearch();
+    });
+  }
+
+  openSearch() {
+    this.modal?.classList.remove('hidden');
+    this.modal?.classList.add('flex');
+    this.input?.focus();
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeSearch() {
+    this.modal?.classList.add('hidden');
+    this.modal?.classList.remove('flex');
+    this.input!.value = '';
+    this.currentQuery = '';
+    this.selectedIndex = -1;
+    document.body.style.overflow = '';
+    this.showEmptyState();
+  }
+
+  performSearch(query: string) {
+    if (!query.trim()) {
+      this.showEmptyState();
+      return;
+    }
+
+    this.showLoadingState();
+
+    // Simple search implementation
+    const results = this.searchIndex.filter(post => {
+      const searchText = `${post.title} ${post.description} ${post.category} ${post.tags.join(' ')} ${post.content}`.toLowerCase();
+      const queryLower = query.toLowerCase();
+      
+      // Check for exact phrase match first (higher priority)
+      if (searchText.includes(queryLower)) {
+        return true;
+      }
+
+      // Check for individual word matches
+      const words = queryLower.split(' ').filter(word => word.length > 2);
+      return words.some(word => searchText.includes(word));
+    });
+
+    // Sort results by relevance
+    const sortedResults = results.sort((a, b) => {
+      const aTitle = a.title.toLowerCase().includes(query.toLowerCase()) ? 1 : 0;
+      const bTitle = b.title.toLowerCase().includes(query.toLowerCase()) ? 1 : 0;
+      const aFeatured = a.featured ? 1 : 0;
+      const bFeatured = b.featured ? 1 : 0;
+      
+      return (bTitle - aTitle) || (bFeatured - aFeatured);
+    });
+
+    setTimeout(() => {
+      this.displayResults(sortedResults.slice(0, 10)); // Show max 10 results
+    }, 100);
+  }
+
+  displayResults(results: any[]) {
+    if (!this.resultsContainer) return;
+
+    this.hideAllStates();
+
+    if (results.length === 0) {
+      this.showNoResultsState();
+      return;
+    }
+
+    this.resultsContainer.classList.remove('hidden');
+    this.resultsContainer.innerHTML = results.map((post, index) => `
+      <a href="${post.url}" class="search-result block p-4 rounded-lg hover:bg-surface transition-colors ${index === this.selectedIndex ? 'bg-surface' : ''}" data-index="${index}">
+        <div class="flex gap-4">
+          ${post.heroImage ? `
+            <div class="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
+              <img src="${post.heroImage}" alt="${post.title} - ${post.category} tutorial and guide" class="w-full h-full object-cover" loading="lazy" />
+            </div>
+          ` : ''}
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-xs px-2 py-1 bg-border rounded-full">${post.category}</span>
+              ${post.featured ? '<span class="text-xs px-2 py-1 bg-blue-500 text-white rounded-full">Featured</span>' : ''}
+            </div>
+            <h3 class="font-medium text-sm mb-1 line-clamp-1">${this.highlightQuery(post.title, this.currentQuery)}</h3>
+            <p class="text-xs text-text-muted line-clamp-2 mb-2">${this.highlightQuery(post.description, this.currentQuery)}</p>
+            <div class="flex flex-wrap gap-1">
+              ${post.tags.slice(0, 3).map((tag: string) => `<span class="text-xs text-text-muted">#${tag}</span>`).join(' ')}
+            </div>
+          </div>
+        </div>
+      </a>
+    `).join('');
+
+    this.selectedIndex = -1;
+  }
+
+  highlightQuery(text: string, query: string): string {
+    if (!query.trim()) return text;
+    
+    const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    return text.replace(regex, '<mark class="bg-yellow-200 dark:bg-yellow-800 px-1 rounded">$1</mark>');
+  }
+
+  navigateResults(direction: number) {
+    const results = this.resultsContainer?.querySelectorAll('.search-result');
+    if (!results || results.length === 0) return;
+
+    // Remove current selection
+    results[this.selectedIndex]?.classList.remove('bg-surface');
+
+    // Update selection
+    this.selectedIndex += direction;
+    if (this.selectedIndex >= results.length) this.selectedIndex = 0;
+    if (this.selectedIndex < 0) this.selectedIndex = results.length - 1;
+
+    // Add new selection
+    results[this.selectedIndex]?.classList.add('bg-surface');
+    results[this.selectedIndex]?.scrollIntoView({ block: 'nearest' });
+  }
+
+  selectResult() {
+    const results = this.resultsContainer?.querySelectorAll('.search-result');
+    if (results && this.selectedIndex >= 0 && this.selectedIndex < results.length) {
+      const selectedResult = results[this.selectedIndex] as HTMLAnchorElement;
+      window.location.href = selectedResult.href;
+    }
+  }
+
+  showLoadingState() {
+    this.hideAllStates();
+    document.getElementById('search-loading')?.classList.remove('hidden');
+  }
+
+  showEmptyState() {
+    this.hideAllStates();
+    document.getElementById('search-empty')?.classList.remove('hidden');
+  }
+
+  showNoResultsState() {
+    this.hideAllStates();
+    document.getElementById('search-no-results')?.classList.remove('hidden');
+  }
+
+  hideAllStates() {
+    document.getElementById('search-loading')?.classList.add('hidden');
+    document.getElementById('search-empty')?.classList.add('hidden');
+    document.getElementById('search-no-results')?.classList.add('hidden');
+    this.resultsContainer?.classList.add('hidden');
+  }
+}
+
+// Initialize search when DOM is loaded or after view transitions
+function initializeSearch() {
+  // Prevent multiple initializations
+  if (window.blogSearchInitialized) {
+    return;
+  }
+  window.blogSearchInitialized = true;
+  new BlogSearch();
+}
+
+// Initialize on DOM load
+document.addEventListener('DOMContentLoaded', initializeSearch);
+
+// Re-initialize after Astro view transitions
+document.addEventListener('astro:after-swap', () => {
+  window.blogSearchInitialized = false;
+  initializeSearch();
+});
+</script>
+
+<style>
+  .line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  kbd {
+    font-family: ui-monospace, SFMono-Regular, 'SF Mono', Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  }
+
+  mark {
+    color: inherit;
+  }
+</style>

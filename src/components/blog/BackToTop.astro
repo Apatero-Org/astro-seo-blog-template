@@ -1,0 +1,145 @@
+---
+// Back to Top button component that appears after scrolling past a certain point
+---
+
+<button
+  id="back-to-top"
+  class="back-to-top-button"
+  aria-label="Back to top"
+  title="Back to top"
+>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <path d="m18 15-6-6-6 6"/>
+  </svg>
+</button>
+
+<style>
+  .back-to-top-button {
+    position: fixed;
+    right: 2rem;
+    bottom: 2rem;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    background: hsl(var(--text));
+    color: hsl(var(--background));
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 50;
+  }
+
+  .back-to-top-button.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+
+  .back-to-top-button:hover {
+    background: hsl(var(--text) / 0.9);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px);
+  }
+
+  .back-to-top-button:active {
+    transform: translateY(0);
+  }
+
+  /* Hide on small screens (mobile) */
+  @media (max-width: 768px) {
+    .back-to-top-button {
+      right: 1rem;
+      bottom: 1rem;
+      width: 2.5rem;
+      height: 2.5rem;
+    }
+  }
+
+  /* Adjust position on very large screens to stay within content area */
+  @media (min-width: 1920px) {
+    .back-to-top-button {
+      right: calc((100vw - 1920px) / 2 + 2rem);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .back-to-top-button {
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+      transform: none !important;
+    }
+  }
+</style>
+
+<script>
+  // Wait for DOM to be ready
+  function initBackToTop() {
+    const backToTopButton = document.getElementById('back-to-top');
+
+    if (!backToTopButton) return;
+
+    // Show button after scrolling 300px
+    const SCROLL_THRESHOLD = 300;
+
+    function toggleButtonVisibility() {
+      if (window.scrollY > SCROLL_THRESHOLD) {
+        backToTopButton.classList.add('visible');
+      } else {
+        backToTopButton.classList.remove('visible');
+      }
+    }
+
+    // Scroll to top smoothly
+    function scrollToTop(e: Event) {
+      e.preventDefault();
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
+
+    // Add scroll event listener with throttle
+    let ticking = false;
+    window.addEventListener('scroll', () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          toggleButtonVisibility();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    });
+
+    // Add click event listener
+    backToTopButton.addEventListener('click', scrollToTop);
+
+    // Initial check in case page is already scrolled
+    toggleButtonVisibility();
+  }
+
+  // Initialize on page load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initBackToTop);
+  } else {
+    initBackToTop();
+  }
+
+  // Re-initialize on Astro page navigation (for View Transitions)
+  document.addEventListener('astro:page-load', initBackToTop);
+</script>

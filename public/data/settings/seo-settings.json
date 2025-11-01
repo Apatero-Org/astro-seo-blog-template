@@ -1,0 +1,14 @@
+{
+  "sitemap": {
+    "enabled": true,
+    "priority": "1.0",
+    "changefreq": "weekly"
+  },
+  "schema": {
+    "enabled": true,
+    "organization": "Astro SEO Blog Template"
+  },
+  "meta": {
+    "keywords": "astro, blog, template, seo, mdx, blogging, astro template, blog template"
+  }
+}

@@ -1,0 +1,128 @@
+---
+import { SITE_CONFIG } from '../data/site-config';
+
+export interface Props {
+  type?: 'website' | 'blog' | 'article' | 'person';
+  title?: string;
+  description?: string;
+  author?: string;
+  datePublished?: string;
+  dateModified?: string;
+  image?: string;
+  url?: string;
+  keywords?: string;
+}
+
+const {
+  type = 'website',
+  title = SITE_CONFIG.title,
+  description = SITE_CONFIG.description,
+  author = SITE_CONFIG.author,
+  datePublished,
+  dateModified,
+  image = SITE_CONFIG.ogImage,
+  url = SITE_CONFIG.url,
+  keywords
+} = Astro.props;
+
+// Build social profiles array
+const sameAs = [];
+if (SITE_CONFIG.social.twitter) {
+  sameAs.push(`https://twitter.com/${SITE_CONFIG.social.twitter.replace('@', '')}`);
+}
+if (SITE_CONFIG.social.instagram) {
+  sameAs.push(`https://instagram.com/${SITE_CONFIG.social.instagram.replace('@', '')}`);
+}
+if (SITE_CONFIG.social.github) {
+  sameAs.push(`https://github.com/${SITE_CONFIG.social.github}`);
+}
+if (SITE_CONFIG.social.linkedin) {
+  sameAs.push(`https://linkedin.com/in/${SITE_CONFIG.social.linkedin}`);
+}
+if (SITE_CONFIG.authorWebsite) {
+  sameAs.push(SITE_CONFIG.authorWebsite);
+}
+
+// Generate structured data based on type
+let structuredData: any = {};
+
+if (type === 'website' || type === 'blog') {
+  structuredData = {
+    "@context": "https://schema.org",
+    "@type": type === 'blog' ? "Blog" : "WebSite",
+    "name": title,
+    "description": description,
+    "url": url,
+    "author": {
+      "@type": "Person",
+      "name": author,
+      "email": SITE_CONFIG.authorEmail,
+      "url": SITE_CONFIG.authorWebsite,
+      "sameAs": sameAs
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": SITE_CONFIG.title,
+      "logo": {
+        "@type": "ImageObject",
+        "url": `${SITE_CONFIG.url}${image}`
+      }
+    },
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": `${url}/search?q={search_term_string}`,
+      "query-input": "required name=search_term_string"
+    }
+  };
+} else if (type === 'article') {
+  structuredData = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": title,
+    "description": description,
+    "author": {
+      "@type": "Person",
+      "name": author,
+      "email": SITE_CONFIG.authorEmail,
+      "url": SITE_CONFIG.authorWebsite,
+      "sameAs": sameAs
+    },
+    "datePublished": datePublished,
+    "dateModified": dateModified || datePublished,
+    "image": `${SITE_CONFIG.url}${image}`,
+    "url": url,
+    "publisher": {
+      "@type": "Organization",
+      "name": SITE_CONFIG.title,
+      "logo": {
+        "@type": "ImageObject",
+        "url": `${SITE_CONFIG.url}${SITE_CONFIG.ogImage}`
+      }
+    },
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": url
+    }
+  };
+  
+  if (keywords) {
+    structuredData.keywords = keywords;
+  }
+} else if (type === 'person') {
+  structuredData = {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "name": author,
+    "email": SITE_CONFIG.authorEmail,
+    "url": SITE_CONFIG.authorWebsite,
+    "sameAs": sameAs,
+    "jobTitle": "Blogger",
+    "worksFor": {
+      "@type": "Organization",
+      "name": SITE_CONFIG.title
+    }
+  };
+}
+---
+
+<script type="application/ld+json" set:html={JSON.stringify(structuredData)} />

@@ -1,0 +1,249 @@
+---
+import { SITE_CONFIG } from '../../data/site-config';
+import { DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES, getLanguagePrefix } from '../../config/languages';
+
+export interface Props {
+  title: string;
+  description: string;
+  ogImage?: string;
+  article?: {
+    publishedTime?: Date;
+    modifiedTime?: Date;
+    author?: string;
+    tags?: string[];
+  };
+  noindex?: boolean;
+  breadcrumb?: Array<{
+    name: string;
+    url: string;
+  }>;
+  faq?: Array<{
+    question: string;
+    answer: string;
+  }>;
+  reviews?: Array<{
+    itemName: string;
+    ratingValue: number;
+    bestRating: number;
+    worstRating: number;
+    reviewBody?: string;
+  }>;
+  currentLanguage?: string;
+  availableLanguages?: string[];
+  currentSlug?: string;
+  pageType?: 'blog-post' | 'blog-index' | 'blog-tag' | 'blog-category';
+  pageIdentifier?: string; // For tags/categories: the tag or category name
+}
+
+const {
+  title,
+  description,
+  ogImage = SITE_CONFIG.ogImage,
+  article,
+  noindex = false,
+  breadcrumb,
+  faq,
+  reviews,
+  currentLanguage = DEFAULT_LANGUAGE,
+  availableLanguages = [],
+  currentSlug,
+  pageType,
+  pageIdentifier,
+} = Astro.props;
+
+// Self-referencing canonical: Each page points to itself (Google's official guidance)
+// Strip trailing slashes for URL consistency
+// Hreflang tags (below) connect language variations - NOT canonical tags
+let canonicalPath = Astro.url.pathname.replace(/\/$/, '') || '/';
+
+const canonicalURL = new URL(canonicalPath, SITE_CONFIG.url);
+const ogImageURL = new URL(ogImage, SITE_CONFIG.url);
+
+const fullTitle = title === SITE_CONFIG.title
+  ? title
+  : `${title} | ${SITE_CONFIG.title}`;
+
+// Generate hreflang URLs for multilingual support
+const hreflangs: Array<{ lang: string; url: string }> = [];
+
+// Determine if we should generate hreflang tags based on page type
+const shouldGenerateHreflang = pageType || (currentSlug && availableLanguages.length > 0);
+
+if (shouldGenerateHreflang) {
+  // Determine which languages to include
+  // For tag/category pages without explicit availableLanguages, only use current language (self-referential)
+  // This prevents generating hreflang for pages that don't exist
+  let languages: string[];
+
+  if (availableLanguages.length > 0) {
+    // Explicit list provided (e.g., blog posts that checked which translations exist)
+    languages = availableLanguages;
+  } else if (pageType === 'blog-index') {
+    // Blog index exists for all languages
+    languages = SUPPORTED_LANGUAGES;
+  } else {
+    // Tag/category pages: only self-referential (current language only)
+    // We don't know which language versions exist without querying
+    languages = [currentLanguage];
+  }
+
+  // Generate hreflang for each language based on page type
+  for (const lang of languages) {
+    const prefix = getLanguagePrefix(lang);
+    let url = '';
+
+    if (pageType === 'blog-index') {
+      url = `${SITE_CONFIG.url}${prefix}/blog`;
+    } else if (pageType === 'blog-tag' && pageIdentifier) {
+      url = `${SITE_CONFIG.url}${prefix}/blog/tag/${pageIdentifier}`;
+    } else if (pageType === 'blog-category' && pageIdentifier) {
+      url = `${SITE_CONFIG.url}${prefix}/blog/category/${pageIdentifier}`;
+    } else if (currentSlug) {
+      // Blog post (legacy support)
+      url = `${SITE_CONFIG.url}${prefix}/blog/${currentSlug}`;
+    }
+
+    if (url) {
+      hreflangs.push({ lang, url });
+    }
+  }
+
+  // Add x-default (fallback to English/default language)
+  // Only add x-default if we have multiple language versions
+  if (hreflangs.length > 1) {
+    let defaultUrl = '';
+
+    if (pageType === 'blog-index') {
+      defaultUrl = `${SITE_CONFIG.url}/blog`;
+    } else if (pageType === 'blog-tag' && pageIdentifier) {
+      defaultUrl = `${SITE_CONFIG.url}/blog/tag/${pageIdentifier}`;
+    } else if (pageType === 'blog-category' && pageIdentifier) {
+      defaultUrl = `${SITE_CONFIG.url}/blog/category/${pageIdentifier}`;
+    } else if (currentSlug) {
+      defaultUrl = `${SITE_CONFIG.url}/blog/${currentSlug}`;
+    }
+
+    if (defaultUrl) {
+      hreflangs.push({ lang: 'x-default', url: defaultUrl });
+    }
+  }
+}
+---
+
+<!-- Primary Meta Tags -->
+<title>{fullTitle}</title>
+<meta name="title" content={fullTitle} />
+<meta name="description" content={description} />
+<link rel="canonical" href={canonicalURL} />
+
+<!-- Hreflang Tags for Multilingual SEO -->
+{hreflangs.length > 0 && hreflangs.map(({ lang, url }) => (
+  <link rel="alternate" hreflang={lang} href={url} />
+))}
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content={article ? 'article' : 'website'} />
+<meta property="og:url" content={canonicalURL} />
+<meta property="og:title" content={fullTitle} />
+<meta property="og:description" content={description} />
+<meta property="og:image" content={ogImageURL} />
+<meta property="og:site_name" content={SITE_CONFIG.title} />
+<meta property="og:locale" content={currentLanguage === 'en' ? 'en_US' : currentLanguage === 'es' ? 'es_ES' : currentLanguage === 'fr' ? 'fr_FR' : currentLanguage === 'de' ? 'de_DE' : currentLanguage === 'ja' ? 'ja_JP' : currentLanguage === 'ko' ? 'ko_KR' : currentLanguage === 'zh' ? 'zh_CN' : SITE_CONFIG.locale} />
+
+<!-- Alternate locales for Open Graph -->
+{availableLanguages.length > 0 && availableLanguages
+  .filter(lang => lang !== currentLanguage)
+  .map(lang => {
+    const locale = lang === 'en' ? 'en_US' : lang === 'es' ? 'es_ES' : lang === 'fr' ? 'fr_FR' : lang === 'de' ? 'de_DE' : lang === 'ja' ? 'ja_JP' : lang === 'ko' ? 'ko_KR' : lang === 'zh' ? 'zh_CN' : lang;
+    return <meta property="og:locale:alternate" content={locale} />;
+  })
+}
+
+<!-- Twitter -->
+<meta property="twitter:card" content="summary_large_image" />
+<meta property="twitter:url" content={canonicalURL} />
+<meta property="twitter:title" content={fullTitle} />
+<meta property="twitter:description" content={description} />
+<meta property="twitter:image" content={ogImageURL} />
+{SITE_CONFIG.social.twitter && (
+  <meta property="twitter:creator" content={`@${SITE_CONFIG.social.twitter}`} />
+)}
+
+<!-- Article specific -->
+{article && (
+  <>
+    {article.publishedTime && (
+      <meta property="article:published_time" content={article.publishedTime.toISOString()} />
+    )}
+    {article.modifiedTime && (
+      <meta property="article:modified_time" content={article.modifiedTime.toISOString()} />
+    )}
+    {article.author && (
+      <meta property="article:author" content={article.author} />
+    )}
+    {article.tags && article.tags.map(tag => (
+      <meta property="article:tag" content={tag} />
+    ))}
+  </>
+)}
+
+<!-- Robots -->
+{noindex && <meta name="robots" content="noindex, nofollow" />}
+
+<!-- BreadcrumbList Schema -->
+{breadcrumb && breadcrumb.length > 0 && (
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": breadcrumb.map((item, index) => ({
+      "@type": "ListItem",
+      "position": index + 1,
+      "name": item.name,
+      "item": {
+        "@type": "Thing",
+        "@id": new URL(item.url, SITE_CONFIG.url).toString(),
+        "name": item.name
+      }
+    }))
+  })} />
+)}
+
+<!-- FAQPage Schema -->
+{faq && faq.length > 0 && (
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": faq.map((item) => ({
+      "@type": "Question",
+      "name": item.question,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": item.answer
+      }
+    }))
+  })} />
+)}
+
+<!-- Review Schema for comparison posts -->
+{reviews && reviews.length > 0 && reviews.map((review) => (
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "Review",
+    "itemReviewed": {
+      "@type": "SoftwareApplication",
+      "name": review.itemName
+    },
+    "reviewRating": {
+      "@type": "Rating",
+      "ratingValue": review.ratingValue.toString(),
+      "bestRating": review.bestRating.toString(),
+      "worstRating": review.worstRating.toString()
+    },
+    "author": {
+      "@type": "Person",
+      "name": article?.author || SITE_CONFIG.author
+    },
+    "datePublished": article?.publishedTime?.toISOString(),
+    ...(review.reviewBody && { "reviewBody": review.reviewBody })
+  })} />
+))}

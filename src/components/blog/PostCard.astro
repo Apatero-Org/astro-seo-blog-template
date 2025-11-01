@@ -1,0 +1,67 @@
+---
+import { formatDate, calculateReadingTime } from '../../lib/utils';
+import { Image } from 'astro:assets';
+import type { CollectionEntry } from 'astro:content';
+
+export interface Props {
+  post: CollectionEntry<'blog'>;
+}
+
+const { post } = Astro.props;
+const { title, description, publishDate, category, tags, heroImage, heroImageAlt } = post.data;
+const readingTime = post.body ? calculateReadingTime(post.body) : 5;
+---
+
+<article class="card-hover group">
+  <a href={`/${post.slug}`} class="block">
+    {heroImage && (
+      <div class="mb-4 overflow-hidden rounded-md aspect-[16/9] bg-surface">
+        <Image
+          src={heroImage}
+          alt={heroImageAlt || `${title} - ${category} tutorial and guide`}
+          width={1600}
+          height={900}
+          class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          loading="lazy"
+          format="webp"
+          quality={85}
+        />
+      </div>
+    )}
+    
+    <div class="space-y-2">
+      <div class="flex items-center gap-2 text-xs text-text-muted">
+        <span class="uppercase font-medium">{category}</span>
+        <span>•</span>
+        <time datetime={publishDate.toISOString()}>
+          {formatDate(publishDate)}
+        </time>
+        <span>•</span>
+        <span>{readingTime} min read</span>
+      </div>
+      
+      <h2 class="text-xl font-semibold line-clamp-2 group-hover:opacity-80 transition-opacity">
+        {title}
+      </h2>
+      
+      <p class="text-text-muted line-clamp-3">
+        {description}
+      </p>
+      
+      {tags.length > 0 && (
+        <div class="flex flex-wrap gap-2 pt-2">
+          {tags.slice(0, 3).map((tag) => (
+            <span class="text-xs px-2 py-1 bg-surface rounded-md">
+              {tag}
+            </span>
+          ))}
+          {tags.length > 3 && (
+            <span class="text-xs px-2 py-1 text-text-muted">
+              +{tags.length - 3} more
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  </a>
+</article>

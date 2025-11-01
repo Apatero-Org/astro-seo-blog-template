@@ -1,0 +1,568 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import fs from 'fs/promises';
+import path from 'path';
+
+// Load current site config from JSON file
+const configPath = path.join(process.cwd(), 'public', 'data', 'settings', 'site-config.json');
+let siteConfig = {
+  title: 'My Astro Blog',
+  description: '',
+  url: '',
+  gaId: ''
+};
+
+try {
+  const configContent = await fs.readFile(configPath, 'utf-8');
+  siteConfig = JSON.parse(configContent);
+} catch (e) {
+  console.error('Failed to load site config:', e);
+}
+
+// Extract current values for the form
+const currentConfig = {
+  siteName: siteConfig.title || 'My Astro Blog',
+  siteDescription: siteConfig.description || '',
+  siteUrl: siteConfig.url || '',
+  gaId: siteConfig.gaId || '',
+  robotsIndex: true,
+  robotsFollow: true,
+};
+
+// Load SEO settings JSON
+const seoSettingsPath = path.join(process.cwd(), 'public', 'data', 'settings', 'seo-settings.json');
+let seoSettings = {
+  sitemap: {
+    enabled: true,
+    priority: '1.0',
+    changefreq: 'weekly'
+  },
+  schema: {
+    enabled: true,
+    type: 'Blog',
+    logo: '',
+    sameAs: []
+  },
+  meta: {
+    themeColor: '#000000',
+    msApplicationTileColor: '#000000',
+    keywords: '',
+    canonicalUrl: ''
+  }
+};
+
+try {
+  const seoContent = await fs.readFile(seoSettingsPath, 'utf-8');
+  seoSettings = JSON.parse(seoContent);
+} catch (e) {
+  // File doesn't exist yet, use defaults
+}
+---
+
+<AdminLayout title="Settings" activeNav="settings">
+  <div class="p-6 lg:p-8">
+    <!-- Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl lg:text-4xl font-display font-bold mb-1">SETTINGS</h1>
+      <p class="text-sm text-text-muted">Configure your site settings and SEO</p>
+    </div>
+
+    <form id="settingsForm" class="space-y-8">
+      <!-- Site Information -->
+      <div >
+        <div class="pb-4 border-b border-border">
+          <h2 class="text-xl font-display font-bold uppercase">Site Information</h2>
+          <p class="text-sm text-text-muted mt-1">Basic information about your website</p>
+        </div>
+        <div class="pt-4 space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium mb-2">Site Name</label>
+              <input
+                type="text"
+                name="siteName"
+                value={currentConfig.siteName}
+                required
+                class="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:border-text"
+                placeholder="My Awesome Blog"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">Site URL</label>
+              <input
+                type="url"
+                name="siteUrl"
+                value={currentConfig.siteUrl}
+                required
+                class="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:border-text"
+                placeholder="https://example.com"
+              />
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Site Description</label>
+            <textarea
+              name="siteDescription"
+              rows="3"
+              class="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:border-text"
+              placeholder="A brief description of your website for search engines..."
+            >{currentConfig.siteDescription}</textarea>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- SEO Settings -->
+      <div >
+        <div class="pb-4 border-b border-border">
+          <h2 class="text-xl font-display font-bold uppercase">SEO Settings</h2>
+          <p class="text-sm text-text-muted mt-1">Search engine optimization settings</p>
+        </div>
+        <div class="pt-4 space-y-4">
+          <div>
+            <label class="block text-sm font-medium mb-2">Default Meta Keywords</label>
+            <input
+              type="text"
+              name="metaKeywords"
+              value={seoSettings.meta?.keywords || ''}
+              class="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:border-text"
+              placeholder="blog, tech, programming, web development"
+            />
+            <p class="text-xs text-text-muted mt-1">Comma-separated keywords for all pages</p>
+          </div>
+
+          <div class="space-y-3 pt-2">
+            <label class="flex items-center gap-3">
+              <input
+                type="checkbox"
+                name="robotsIndex"
+                checked={currentConfig.robotsIndex}
+                class="w-4 h-4 rounded border-border"
+              />
+              <span class="text-sm">Allow search engines to index this site</span>
+            </label>
+            <label class="flex items-center gap-3">
+              <input
+                type="checkbox"
+                name="robotsFollow"
+                checked={currentConfig.robotsFollow}
+                class="w-4 h-4 rounded border-border"
+              />
+              <span class="text-sm">Allow search engines to follow links</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sitemap Settings -->
+      <div >
+        <div class="pb-4 border-b border-border">
+          <h2 class="text-xl font-display font-bold uppercase">Sitemap Settings</h2>
+          <p class="text-sm text-text-muted mt-1">Configure XML sitemap generation</p>
+        </div>
+        <div class="pt-4 space-y-4">
+          <label class="flex items-center gap-3">
+            <input
+              type="checkbox"
+              name="sitemapEnabled"
+              checked={seoSettings.sitemap.enabled}
+              class="w-4 h-4 rounded border-border"
+            />
+            <span class="text-sm">Enable XML Sitemap</span>
+          </label>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium mb-2">Default Priority</label>
+              <select name="sitemapPriority" class="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:border-text">
+                <option value="0.1" selected={seoSettings.sitemap.priority === '0.1'}>0.1</option>
+                <option value="0.3" selected={seoSettings.sitemap.priority === '0.3'}>0.3</option>
+                <option value="0.5" selected={seoSettings.sitemap.priority === '0.5'}>0.5</option>
+                <option value="0.7" selected={seoSettings.sitemap.priority === '0.7'}>0.7</option>
+                <option value="0.9" selected={seoSettings.sitemap.priority === '0.9'}>0.9</option>
+                <option value="1.0" selected={seoSettings.sitemap.priority === '1.0'}>1.0</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">Change Frequency</label>
+              <select name="sitemapChangefreq" class="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:border-text">
+                <option value="always" selected={seoSettings.sitemap.changefreq === 'always'}>Always</option>
+                <option value="hourly" selected={seoSettings.sitemap.changefreq === 'hourly'}>Hourly</option>
+                <option value="daily" selected={seoSettings.sitemap.changefreq === 'daily'}>Daily</option>
+                <option value="weekly" selected={seoSettings.sitemap.changefreq === 'weekly'}>Weekly</option>
+                <option value="monthly" selected={seoSettings.sitemap.changefreq === 'monthly'}>Monthly</option>
+                <option value="yearly" selected={seoSettings.sitemap.changefreq === 'yearly'}>Yearly</option>
+                <option value="never" selected={seoSettings.sitemap.changefreq === 'never'}>Never</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- Social Media -->
+      <div >
+        <div class="pb-4 border-b border-border">
+          <h2 class="text-xl font-display font-bold uppercase">Social Media</h2>
+          <p class="text-sm text-text-muted mt-1">Social media accounts for the footer links</p>
+        </div>
+        <div class="p-6 space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Twitter -->
+            <div>
+              <label class="flex items-center gap-2 text-sm font-medium mb-3">
+                <svg class="w-5 h-5 text-text-muted" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/>
+                </svg>
+                Twitter
+              </label>
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                  <span class="text-text-muted text-sm">@</span>
+                </div>
+                <input
+                  type="text"
+                  name="socialTwitter"
+                  value={siteConfig.social?.twitter?.replace('@', '') || ''}
+                  class="w-full pl-8 pr-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:border-text transition-colors"
+                  placeholder="username"
+                />
+              </div>
+            </div>
+
+            <!-- GitHub -->
+            <div>
+              <label class="flex items-center gap-2 text-sm font-medium mb-3">
+                <svg class="w-5 h-5 text-text-muted" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                </svg>
+                GitHub
+              </label>
+              <input
+                type="text"
+                name="socialGithub"
+                value={siteConfig.social?.github || ''}
+                class="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:border-text transition-colors"
+                placeholder="username"
+              />
+            </div>
+
+            <!-- LinkedIn -->
+            <div>
+              <label class="flex items-center gap-2 text-sm font-medium mb-3">
+                <svg class="w-5 h-5 text-text-muted" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                </svg>
+                LinkedIn
+              </label>
+              <input
+                type="text"
+                name="socialLinkedin"
+                value={siteConfig.social?.linkedin || ''}
+                class="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:border-text transition-colors"
+                placeholder="username"
+              />
+            </div>
+
+            <!-- Instagram -->
+            <div>
+              <label class="flex items-center gap-2 text-sm font-medium mb-3">
+                <svg class="w-5 h-5 text-text-muted" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                </svg>
+                Instagram
+              </label>
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                  <span class="text-text-muted text-sm">@</span>
+                </div>
+                <input
+                  type="text"
+                  name="socialInstagram"
+                  value={siteConfig.social?.instagram?.replace('@', '') || ''}
+                  class="w-full pl-8 pr-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:border-text transition-colors"
+                  placeholder="username"
+                />
+              </div>
+            </div>
+
+            <!-- YouTube -->
+            <div>
+              <label class="flex items-center gap-2 text-sm font-medium mb-3">
+                <svg class="w-5 h-5 text-text-muted" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                </svg>
+                YouTube
+              </label>
+              <input
+                type="text"
+                name="socialYoutube"
+                value={siteConfig.social?.youtube || ''}
+                class="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:border-text transition-colors"
+                placeholder="channel-name or @handle"
+              />
+            </div>
+
+            <!-- Discord -->
+            <div>
+              <label class="flex items-center gap-2 text-sm font-medium mb-3">
+                <svg class="w-5 h-5 text-text-muted" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.210.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.010c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.120.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.210 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418Z"/>
+                </svg>
+                Discord
+              </label>
+              <input
+                type="text"
+                name="socialDiscord"
+                value={siteConfig.social?.discord || ''}
+                class="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:border-text transition-colors"
+                placeholder="server-invite-code"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Analytics -->
+      <div >
+        <div class="pb-4 border-b border-border">
+          <h2 class="text-xl font-display font-bold uppercase">Analytics</h2>
+          <p class="text-sm text-text-muted mt-1">Configure tracking and analytics</p>
+        </div>
+        <div class="pt-4 space-y-4">
+          <div>
+            <label class="block text-sm font-medium mb-2">Google Analytics ID</label>
+            <input
+              type="text"
+              name="gaId"
+              value={currentConfig.gaId}
+              class="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:border-text"
+              placeholder="G-XXXXXXXXXX"
+            />
+            <p class="text-xs text-text-muted mt-1">Your Google Analytics Measurement ID</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Blog CTA Settings -->
+      <div >
+        <div class="pb-4 border-b border-border">
+          <h2 class="text-xl font-display font-bold uppercase">Blog CTA Settings</h2>
+          <p class="text-sm text-text-muted mt-1">Configure the call-to-action that appears in blog posts</p>
+        </div>
+        <div class="pt-4 space-y-4">
+          <label class="flex items-center gap-3">
+            <input
+              type="checkbox"
+              name="ctaEnabled"
+              checked={siteConfig.blogCTA?.enabled}
+              class="w-4 h-4 rounded border-border"
+            />
+            <span class="text-sm">Enable CTA in blog posts</span>
+          </label>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium mb-2">CTA Title</label>
+              <input
+                type="text"
+                name="ctaTitle"
+                value={siteConfig.blogCTA?.title || 'Join Our Waitlist - Be One of the First Apatero Creators'}
+                class="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:border-text"
+                placeholder="Join Our Waitlist - Be One of the First Apatero Creators"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">Button Text</label>
+              <input
+                type="text"
+                name="ctaButtonText"
+                value={siteConfig.blogCTA?.buttonText || 'Join Waitlist'}
+                class="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:border-text"
+                placeholder="Join Waitlist"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-2">CTA Description</label>
+            <textarea
+              name="ctaDescription"
+              rows="3"
+              class="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:border-text"
+              placeholder="Get exclusive early access to Apatero's revolutionary AI creation platform..."
+            >{siteConfig.blogCTA?.description || "Get exclusive early access to Apatero's revolutionary AI creation platform. Join the select group of pioneering creators shaping the future of AI-powered content."}</textarea>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium mb-2">Button URL</label>
+              <input
+                type="text"
+                name="ctaButtonUrl"
+                value={siteConfig.blogCTA?.buttonUrl || '/'}
+                class="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:border-text"
+                placeholder="/"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">Secondary Text</label>
+              <input
+                type="text"
+                name="ctaSecondaryText"
+                value={siteConfig.blogCTA?.secondaryText || 'Limited Early Access'}
+                class="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:border-text"
+                placeholder="Limited Early Access"
+              />
+            </div>
+          </div>
+
+          <label class="flex items-center gap-3">
+            <input
+              type="checkbox"
+              name="ctaShowStats"
+              checked={siteConfig.blogCTA?.showStats}
+              class="w-4 h-4 rounded border-border"
+            />
+            <span class="text-sm">Show statistics in CTA</span>
+          </label>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-sm font-medium mb-2">Stat 1 Number</label>
+              <input
+                type="text"
+                name="ctaStat1Number"
+                value={siteConfig.blogCTA?.stats?.[0]?.number || '1,000+'}
+                class="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:border-text"
+                placeholder="1,000+"
+              />
+              <label class="block text-sm font-medium mb-2 mt-2">Stat 1 Label</label>
+              <input
+                type="text"
+                name="ctaStat1Label"
+                value={siteConfig.blogCTA?.stats?.[0]?.label || 'Waitlist Members'}
+                class="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:border-text"
+                placeholder="Waitlist Members"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">Stat 2 Number</label>
+              <input
+                type="text"
+                name="ctaStat2Number"
+                value={siteConfig.blogCTA?.stats?.[1]?.number || 'First 500'}
+                class="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:border-text"
+                placeholder="First 500"
+              />
+              <label class="block text-sm font-medium mb-2 mt-2">Stat 2 Label</label>
+              <input
+                type="text"
+                name="ctaStat2Label"
+                value={siteConfig.blogCTA?.stats?.[1]?.label || 'Get Priority'}
+                class="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:border-text"
+                placeholder="Get Priority"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">Stat 3 Number</label>
+              <input
+                type="text"
+                name="ctaStat3Number"
+                value={siteConfig.blogCTA?.stats?.[2]?.number || 'Early 2025'}
+                class="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:border-text"
+                placeholder="Early 2025"
+              />
+              <label class="block text-sm font-medium mb-2 mt-2">Stat 3 Label</label>
+              <input
+                type="text"
+                name="ctaStat3Label"
+                value={siteConfig.blogCTA?.stats?.[2]?.label || 'Launch Date'}
+                class="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:border-text"
+                placeholder="Launch Date"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Save Button -->
+      <div class="flex justify-end gap-4 pt-8 border-t border-border">
+        <button
+          type="button"
+          onclick="window.location.reload()"
+          class="px-6 py-3 border border-border rounded-full hover:bg-surface transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          class="px-8 py-3 bg-text text-background rounded-full font-bold hover:bg-text/90 transition-all hover:scale-105"
+        >
+          SAVE SETTINGS
+        </button>
+      </div>
+    </form>
+  </div>
+
+
+  <script>
+  
+    document.getElementById('settingsForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const formData = new FormData(e.target);
+      const settings = {};
+      
+      // Convert form data to object
+      for (const [key, value] of formData.entries()) {
+        if (key.includes('checkbox')) {
+          settings[key] = formData.get(key) === 'on';
+        } else {
+          settings[key] = value;
+        }
+      }
+      
+      // Handle checkboxes that might be unchecked
+      settings.robotsIndex = formData.has('robotsIndex');
+      settings.robotsFollow = formData.has('robotsFollow');
+      settings.sitemapEnabled = formData.has('sitemapEnabled');
+      settings.schemaEnabled = formData.has('schemaEnabled');
+      settings.ctaEnabled = formData.has('ctaEnabled');
+      settings.ctaShowStats = formData.has('ctaShowStats');
+      
+      console.log('Form settings to save:', settings);
+      
+      try {
+        const response = await fetch('/api/settings', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(settings),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to save settings');
+        }
+        
+        // Show success message
+        const button = e.target.querySelector('button[type="submit"]');
+        const originalText = button.textContent;
+        button.textContent = 'Saved!';
+        button.classList.add('bg-green-600');
+        
+        setTimeout(() => {
+          button.textContent = originalText;
+          button.classList.remove('bg-green-600');
+          // Reload to apply new settings
+          window.location.reload();
+        }, 1500);
+        
+      } catch (error) {
+        console.error('Error saving settings:', error);
+        alert('Failed to save settings: ' + error.message);
+      }
+    });
+  </script>
+</AdminLayout>

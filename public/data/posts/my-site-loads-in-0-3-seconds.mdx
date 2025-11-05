@@ -1,0 +1,335 @@
+---
+title: "My Site Loads in 0.3 Seconds (Here's Every Speed Optimization I Used)"
+description: "Perfect 100 scores on Google PageSpeed Insights. 0.3 second load times. Here's every single optimization I implemented to make this blog ridiculously fast."
+publishDate: 2025-11-05T19:00:00.000Z
+updateDate: 2025-11-05T19:00:00.000Z
+author: "kevin"
+category: "performance"
+tags: ["performance","page-speed","core-web-vitals","optimization","astro"]
+featured: true
+draft: false
+heroImage: ""
+seoTitle: "How I Got Perfect 100 PageSpeed Scores: Complete Optimization Guide"
+seoDescription: "Detailed breakdown of every performance optimization used to achieve 0.3s load times and perfect PageSpeed scores. AVIF images, Speculation Rules API, and more."
+seoKeywords: ""
+noindex: false
+nofollow: false
+canonicalUrl: ""
+ogTitle: "How I Got Perfect 100 PageSpeed Scores: Complete Optimization Guide"
+ogDescription: "Detailed breakdown of every performance optimization used to achieve 0.3s load times and perfect PageSpeed scores. AVIF images, Speculation Rules API, and more."
+ogImage: ""
+---
+
+I'm a bit obsessed with page speed.
+
+Not in a "let's shave 0.02 seconds off the render time" kind of way. More in a "why is this taking three seconds to load when it should be instant" kind of way.
+
+Fast sites feel better. They convert better. They rank better. They're just.. better.
+
+So when I built this blog, I went all in on performance. And the results are pretty good.
+
+This site loads in 0.3 seconds. It scores perfect 100s across the board on Google PageSpeed Insights. You can check for yourself.. head to apatero.com and run it through PageSpeed Insights.
+
+Let me show you exactly how I did it.
+
+## Why Speed Matters (The Quick Version)
+
+Before I get into the technical stuff, let's talk about why this matters.
+
+Google says 53 percent of mobile users abandon sites that take longer than 3 seconds to load.
+
+That's more than half your visitors gone before they even see your content.
+
+Core Web Vitals are a ranking factor. Slow sites rank worse than fast sites, all else being equal.
+
+Fast sites convert better. Amazon found that every 100ms of latency cost them 1 percent in sales. That's real money.
+
+And honestly, fast sites just feel better to use. When you click something and it responds instantly, that's a good experience. When you click and wait and wonder if it's even working.. that's frustrating.
+
+So yeah, speed matters.
+
+## The Foundation: Choosing the Right Framework
+
+This is where it starts.
+
+I built this blog on Astro, and that decision alone probably bought me 40 to 60 percent better performance compared to WordPress.
+
+Astro ships zero JavaScript by default. Everything is rendered to HTML at build time. No client-side hydration. No massive framework bundles. Just fast, static HTML.
+
+The entire bundle size for this site is about 184KB. That's everything. The framework, the components, the styling, all of it.
+
+A typical WordPress site with a decent theme and a few plugins? Easily over 1MB. Sometimes multiple megabytes.
+
+You can't optimize your way out of a slow foundation. Start with a fast framework or you're fighting an uphill battle.
+
+If you're stuck with WordPress or another heavy platform, you can still improve performance. But you'll never hit these numbers without changing the foundation.
+
+## Image Optimization: The Biggest Win
+
+Images are usually the biggest performance bottleneck on any site.
+
+I implemented support for AVIF and WebP formats. These modern image formats are 20 to 50 percent smaller than JPEG with the same visual quality.
+
+That's not a small difference. That's the difference between a page that loads instantly and one that makes people wait.
+
+Here's what I do now:
+
+Serve AVIF to browsers that support it (most modern browsers do).
+
+Fall back to WebP for browsers that don't support AVIF but support WebP.
+
+Fall back to JPEG for old browsers.
+
+The browser automatically picks the best format it can handle. Users always get the smallest file that works.
+
+I also implemented mobile-first responsive images. Most traffic comes from phones, right? So why serve desktop-sized images to mobile users?
+
+Now the template automatically serves appropriately sized images based on the device. A 320px wide phone gets a 320px wide image. A 1920px desktop gets a 1920px image.
+
+This alone probably cut image bandwidth by 60 to 70 percent on mobile devices.
+
+## Preconnect: Speeding Up Third-Party Resources
+
+When your browser needs to load something from another domain, there's overhead.
+
+It has to do a DNS lookup to find the server. Then establish a TCP connection. Then do a TLS handshake for HTTPS.
+
+All of that takes time. Usually 200 to 400 milliseconds.
+
+Preconnect solves this by doing all that work ahead of time.
+
+I added preconnect hints for any third-party resources the site uses. Google Analytics, Google Fonts, whatever.
+
+By the time the browser actually needs those resources, the connection is already established. The resource loads immediately instead of waiting for the connection dance.
+
+This is a small optimization but it adds up. Every millisecond counts.
+
+## Speculation Rules API: Instant Page Navigation
+
+This is one of my favorite optimizations.
+
+Chrome 121 and up supports the Speculation Rules API. It lets the browser prefetch pages before you even click on them.
+
+The browser predicts where you're likely to navigate and loads those pages in the background. When you actually click, the page appears instantly. It feels like magic.
+
+I implemented this for the blog. When you're reading a post, Chrome is already loading the next likely pages you might visit. Click a link and it's there. No loading. No waiting.
+
+This doesn't help with the initial page load, but it makes the entire browsing experience feel dramatically faster.
+
+Going from page to page feels instant. That's the kind of performance improvement users actually notice.
+
+## LoAF API: Monitoring Real User Experience
+
+Here's something most people skip.. actually monitoring what users experience.
+
+I added LoAF API monitoring. That's Long Animation Frames. It tracks when the page is doing too much work and causing janky animations or delayed interactions.
+
+This data goes to Google Analytics 4 so I can see exactly when and where users experience slowdowns.
+
+Most performance optimization is done with synthetic tests. Run Lighthouse, get a score, optimize based on that.
+
+But that's not real user experience. Real users have slow devices, poor connections, lots of browser extensions, whatever.
+
+LoAF tells me what's actually happening for real users. If I see high LoAF values, I know there's a problem I need to fix.
+
+This is about continuous monitoring, not just hitting good scores once and calling it done.
+
+## Critical CSS and Async Loading
+
+CSS blocks rendering. The browser has to download and parse all your CSS before it can show anything.
+
+I inline critical CSS. The absolute minimum styles needed to render above-the-fold content go directly in the HTML. Everything else loads asynchronously.
+
+Users see content immediately. The page is functional before all the styling loads.
+
+Same approach with JavaScript. Any JS that's not critical for initial render gets deferred or loaded async.
+
+The goal is to get something useful on screen as fast as possible. Polish can come later.
+
+## Static Site Generation
+
+This entire blog is pre-rendered at build time.
+
+When you visit a page, there's no server-side rendering. No database queries. No dynamic generation.
+
+Just static HTML being served directly from a CDN.
+
+This is fast by nature. There's no computation happening when you request a page. It's just.. here's the file, served from a server near you.
+
+Build time is about 8.5 seconds for the entire site. That's acceptable. Especially since it only happens when I deploy, not on every request.
+
+Static generation isn't right for everything. If you need real-time data or user-specific content, you need dynamic rendering.
+
+But for a blog? For content that doesn't change on every request? Static is the way to go.
+
+## CDN and Edge Hosting
+
+Where you host matters almost as much as how you build.
+
+I use edge hosting. The static files are distributed to servers around the world. When you visit, you're loading from whichever server is closest to you.
+
+If you're in Tokyo, you're loading from Tokyo. If you're in London, you're loading from London.
+
+This dramatically reduces latency. Instead of every request going to a single server somewhere, requests go to the nearest edge location.
+
+For a global audience, this is huge. A site hosted in the US serving users in Asia will always be slower than a site served from Asia.
+
+Edge hosting fixes this. Everyone gets fast load times regardless of where they are.
+
+## No Unnecessary JavaScript
+
+Here's a simple one.. if you don't need JavaScript for something, don't use JavaScript.
+
+So many sites ship hundreds of kilobytes of JS just to display static content. Animations that could be CSS. Interactions that could be HTML.
+
+I ship almost zero JavaScript for most pages. Blog posts are just HTML and CSS. No React. No Vue. No framework overhead.
+
+If a page needs interactivity, I add it just to that component. The rest stays static.
+
+This is Astro's islands architecture, and it's brilliant for content sites. 95 percent of your content is static. Only the interactive bits get JavaScript.
+
+Most blogs don't need JS at all. Just fast HTML and CSS.
+
+## Lazy Loading and Progressive Enhancement
+
+Not everything needs to load immediately.
+
+Images below the fold? Lazy loaded. They load when you scroll near them.
+
+Third-party embeds like YouTube videos? Lazy loaded with a placeholder until you actually want to watch.
+
+Comments sections? Loaded on interaction.
+
+The initial page load is just the content you're actually reading. Everything else waits until you need it.
+
+This keeps initial load times minimal while still providing full functionality when you want it.
+
+## Font Optimization
+
+Web fonts are another common performance bottleneck.
+
+I use font-display: swap so text appears immediately with a system font, then swaps to the web font when it loads.
+
+Users see text instantly instead of waiting for fonts. If the font loads fast, they barely notice the swap. If it loads slow, they still get readable content.
+
+I also preload critical fonts that are used above the fold. These load with higher priority so the swap happens faster.
+
+And I only load font weights I actually use. No loading regular, medium, semi-bold, bold, and extra-bold when I only use regular and bold.
+
+Every font weight is another file to download. Only load what you need.
+
+## HTTP/2 and Modern Protocols
+
+This is more about hosting configuration, but it matters.
+
+HTTP/2 allows multiplexing. Multiple files can transfer over a single connection simultaneously.
+
+In HTTP/1.1, browsers could only load a few files at once. With HTTP/2, everything loads in parallel.
+
+I also ensure compression is enabled. Gzip at minimum, Brotli if possible. Text assets get compressed before transfer.
+
+HTML, CSS, and JavaScript compress really well. Often 70 to 80 percent reduction in file size.
+
+This is usually handled by your host, but verify it's actually working. Use a tool like WebPageTest to check if your assets are being compressed.
+
+## Eliminating Render-Blocking Resources
+
+Every external stylesheet or script that loads in the `<head>` blocks rendering.
+
+The browser can't show anything until these finish loading.
+
+I minimize render-blocking resources. Critical CSS is inlined. Scripts are deferred or moved to the bottom. Fonts are preloaded.
+
+The goal is to let the browser start rendering as soon as possible.
+
+Every resource that blocks rendering adds to your First Contentful Paint and Largest Contentful Paint times.
+
+These are Core Web Vitals metrics. They directly impact SEO rankings.
+
+Faster is better. And that means eliminating blockers.
+
+## The Results
+
+So what does all this get you?
+
+This site loads in 0.3 seconds. Sometimes faster depending on your connection and location.
+
+Google PageSpeed Insights shows perfect 100 scores across all metrics. Performance, Accessibility, Best Practices, SEO. All 100.
+
+You can verify this yourself. Go to apatero.com and run it through PageSpeed Insights. The scores are public.
+
+Core Web Vitals are all in the green. Largest Contentful Paint under 1 second. First Input Delay under 10 milliseconds. Cumulative Layout Shift under 0.1.
+
+These aren't just vanity metrics. They correlate with real user experience and SEO performance.
+
+Fast sites rank better. Fast sites convert better. Fast sites feel better.
+
+## What Actually Moved the Needle
+
+Not all optimizations are equal. Some have huge impact. Some are marginal.
+
+Here's what made the biggest difference for me:
+
+**Choosing Astro.** This is 50 percent of the win. Starting with a fast foundation matters more than any individual optimization.
+
+**Image optimization.** AVIF/WebP formats and responsive images probably saved 1 to 2 seconds on image-heavy pages.
+
+**Static generation.** No server-side rendering means no processing delay. Instant responses.
+
+**Edge hosting.** Serving from nearby locations cut latency by 100 to 200 milliseconds globally.
+
+**Minimal JavaScript.** Not shipping unnecessary code is free performance.
+
+Everything else is polish. Preconnect, lazy loading, font optimization.. they all help, but the big wins come from the fundamentals.
+
+Get the foundation right first. Then optimize the details.
+
+## You Can Do This Too
+
+Here's the thing.. none of this is magic. None of this requires deep technical expertise.
+
+If you're using this Astro template, most of these optimizations are already built in. You get them for free just by using the template.
+
+If you're on another platform, you can still implement many of these. Image optimization works everywhere. Lazy loading works everywhere. Font optimization works everywhere.
+
+Start with the biggest wins. Optimize images. Minimize JavaScript. Choose faster hosting.
+
+Then work down the list. Preconnect hints. Lazy loading. Font optimization. Render-blocking elimination.
+
+Each optimization compounds with the others. Shave 100 milliseconds here, 200 milliseconds there, and suddenly you're twice as fast.
+
+## Does This Actually Matter for SEO?
+
+Yes. Unquestionably yes.
+
+Google uses Core Web Vitals as a ranking factor. Fast sites get a boost. Slow sites get penalized.
+
+It's not the only factor. Content quality matters more. Relevance matters more. Authority matters more.
+
+But all else equal, the faster site ranks higher.
+
+I've seen it in my own projects. Improve page speed, see rankings improve. It's not dramatic, but it's measurable.
+
+And even if it weren't a ranking factor, it would still matter for user experience and conversion rates.
+
+Fast sites feel professional. They feel trustworthy. They make people want to stick around.
+
+Slow sites feel broken. They make people leave.
+
+That matters for your business regardless of SEO.
+
+## The Bottom Line
+
+Getting perfect PageSpeed scores and sub-second load times isn't magic. It's making good choices and implementing known optimizations.
+
+Choose a fast foundation. Optimize images aggressively. Minimize JavaScript. Use edge hosting. Eliminate render-blocking resources.
+
+Do these things and you'll be fast. Maybe not 0.3 seconds fast, but fast enough to score well and provide a great experience.
+
+The specifics matter less than the principles. Start fast. Stay lean. Load only what you need. Serve from nearby.
+
+If you want to see all these optimizations in action, check out the code for this blog. It's open source. Everything I've described is implemented and available to use.
+
+Or just visit apatero.com and run it through PageSpeed Insights. See the scores yourself.
+
+Fast sites are possible. They just require caring enough to make them happen.

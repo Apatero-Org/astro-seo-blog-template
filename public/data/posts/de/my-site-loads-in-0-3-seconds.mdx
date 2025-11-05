@@ -1,0 +1,335 @@
+---
+title: "Meine Website lädt in 0,3 Sekunden (Hier sind alle Speed-Optimierungen, die ich verwendet habe)"
+description: "Perfekte 100er-Scores bei Google PageSpeed Insights. 0,3 Sekunden Ladezeiten. Hier ist jede einzelne Optimierung, die ich implementiert habe, um diesen Blog lächerlich schnell zu machen."
+publishDate: 2025-11-05T19:00:00.000Z
+updateDate: 2025-11-05T19:00:00.000Z
+author: "kevin"
+category: "performance"
+tags: ["performance","page-speed","core-web-vitals","optimization","astro"]
+featured: true
+draft: false
+heroImage: ""
+seoTitle: "Wie ich perfekte 100er PageSpeed-Scores bekam: Vollständiger Optimierungs-Guide"
+seoDescription: "Detaillierte Aufschlüsselung jeder Performance-Optimierung, die verwendet wurde, um 0,3s Ladezeiten und perfekte PageSpeed-Scores zu erreichen. AVIF-Bilder, Speculation Rules API und mehr."
+seoKeywords: ""
+noindex: false
+nofollow: false
+canonicalUrl: ""
+ogTitle: "Wie ich perfekte 100er PageSpeed-Scores bekam: Vollständiger Optimierungs-Guide"
+ogDescription: "Detaillierte Aufschlüsselung jeder Performance-Optimierung, die verwendet wurde, um 0,3s Ladezeiten und perfekte PageSpeed-Scores zu erreichen. AVIF-Bilder, Speculation Rules API und mehr."
+ogImage: ""
+---
+
+Ich bin ein bisschen besessen von Seitengeschwindigkeit.
+
+Nicht auf eine "lass uns 0,02 Sekunden von der Renderzeit abrasieren"-Art. Mehr auf eine "warum dauert das drei Sekunden zum Laden, wenn es sofort sein sollte"-Art.
+
+Schnelle Websites fühlen sich besser an. Sie konvertieren besser. Sie ranken besser. Sie sind einfach.. besser.
+
+Also als ich diesen Blog gebaut habe, bin ich voll auf Performance gegangen. Und die Ergebnisse sind ziemlich gut.
+
+Diese Website lädt in 0,3 Sekunden. Sie erzielt perfekte 100er in allen Bereichen bei Google PageSpeed Insights. Du kannst es selbst überprüfen.. geh zu apatero.com und lass es durch PageSpeed Insights laufen.
+
+Lass mich dir genau zeigen, wie ich das gemacht habe.
+
+## Warum Geschwindigkeit zählt (Die Kurzversion)
+
+Bevor ich in die technischen Sachen einsteige, lass uns darüber reden, warum das wichtig ist.
+
+Google sagt, 53 Prozent der mobilen Nutzer verlassen Websites, die länger als 3 Sekunden zum Laden brauchen.
+
+Das ist mehr als die Hälfte deiner Besucher weg, bevor sie überhaupt deinen Content gesehen haben.
+
+Core Web Vitals sind ein Ranking-Faktor. Langsame Websites ranken schlechter als schnelle Websites, alles andere gleich.
+
+Schnelle Websites konvertieren besser. Amazon fand heraus, dass jede 100ms Latenz sie 1 Prozent der Verkäufe kostete. Das ist echtes Geld.
+
+Und ehrlich gesagt fühlen sich schnelle Websites einfach besser zu nutzen an. Wenn du etwas klickst und es sofort reagiert, ist das eine gute Erfahrung. Wenn du klickst und wartest und dich fragst, ob es überhaupt funktioniert.. das ist frustrierend.
+
+Also ja, Geschwindigkeit zählt.
+
+## Die Grundlage: Das richtige Framework wählen
+
+Hier beginnt es.
+
+Ich habe diesen Blog auf Astro gebaut, und diese Entscheidung allein hat mir wahrscheinlich 40 bis 60 Prozent bessere Performance im Vergleich zu WordPress gekauft.
+
+Astro liefert standardmäßig null JavaScript aus. Alles wird zur Build-Zeit zu HTML gerendert. Keine clientseitige Hydratation. Keine massiven Framework-Bundles. Nur schnelles, statisches HTML.
+
+Die gesamte Bundle-Größe für diese Website beträgt etwa 184KB. Das ist alles. Das Framework, die Komponenten, das Styling, alles.
+
+Eine typische WordPress-Website mit einem anständigen Theme und ein paar Plugins? Leicht über 1MB. Manchmal mehrere Megabytes.
+
+Du kannst dich nicht aus einer langsamen Grundlage herausoptimieren. Beginne mit einem schnellen Framework oder du kämpfst einen Kampf bergauf.
+
+Wenn du bei WordPress oder einer anderen schweren Plattform feststeckst, kannst du die Performance immer noch verbessern. Aber du wirst diese Zahlen nie ohne Änderung der Grundlage erreichen.
+
+## Bildoptimierung: Der größte Gewinn
+
+Bilder sind normalerweise der größte Performance-Engpass auf jeder Website.
+
+Ich habe Unterstützung für AVIF- und WebP-Formate implementiert. Diese modernen Bildformate sind 20 bis 50 Prozent kleiner als JPEG mit der gleichen visuellen Qualität.
+
+Das ist kein kleiner Unterschied. Das ist der Unterschied zwischen einer Seite, die sofort lädt, und einer, die Leute warten lässt.
+
+Hier ist, was ich jetzt mache:
+
+AVIF an Browser ausliefern, die es unterstützen (die meisten modernen Browser tun es).
+
+Zurückfallen auf WebP für Browser, die AVIF nicht unterstützen, aber WebP unterstützen.
+
+Zurückfallen auf JPEG für alte Browser.
+
+Der Browser wählt automatisch das beste Format, das er handhaben kann. Nutzer bekommen immer die kleinste Datei, die funktioniert.
+
+Ich habe auch mobile-first responsive Bilder implementiert. Der meiste Traffic kommt von Handys, richtig? Warum also Desktop-große Bilder an mobile Nutzer ausliefern?
+
+Jetzt liefert das Template automatisch angemessen große Bilder basierend auf dem Gerät aus. Ein 320px breites Handy bekommt ein 320px breites Bild. Ein 1920px Desktop bekommt ein 1920px Bild.
+
+Das allein hat wahrscheinlich die Bild-Bandbreite auf mobilen Geräten um 60 bis 70 Prozent reduziert.
+
+## Preconnect: Beschleunigung von Drittanbieter-Ressourcen
+
+Wenn dein Browser etwas von einer anderen Domain laden muss, gibt es Overhead.
+
+Er muss einen DNS-Lookup machen, um den Server zu finden. Dann eine TCP-Verbindung aufbauen. Dann einen TLS-Handshake für HTTPS machen.
+
+All das kostet Zeit. Normalerweise 200 bis 400 Millisekunden.
+
+Preconnect löst das, indem es all diese Arbeit im Voraus erledigt.
+
+Ich habe Preconnect-Hints für alle Drittanbieter-Ressourcen hinzugefügt, die die Website nutzt. Google Analytics, Google Fonts, was auch immer.
+
+Wenn der Browser diese Ressourcen tatsächlich braucht, ist die Verbindung bereits aufgebaut. Die Ressource lädt sofort statt auf den Verbindungs-Tanz zu warten.
+
+Das ist eine kleine Optimierung, aber sie summiert sich. Jede Millisekunde zählt.
+
+## Speculation Rules API: Sofortige Seitennavigation
+
+Das ist eine meiner Lieblingsoptimierungen.
+
+Chrome 121 und höher unterstützt die Speculation Rules API. Sie lässt den Browser Seiten vorladen, bevor du sie überhaupt anklickst.
+
+Der Browser sagt voraus, wohin du wahrscheinlich navigieren wirst, und lädt diese Seiten im Hintergrund. Wenn du tatsächlich klickst, erscheint die Seite sofort. Es fühlt sich wie Magie an.
+
+Ich habe das für den Blog implementiert. Wenn du einen Beitrag liest, lädt Chrome bereits die nächsten wahrscheinlichen Seiten, die du besuchen könntest. Klicke einen Link und sie ist da. Kein Laden. Kein Warten.
+
+Das hilft nicht beim initialen Seitenladen, aber es lässt die gesamte Browsing-Erfahrung dramatisch schneller fühlen.
+
+Von Seite zu Seite zu gehen fühlt sich sofort an. Das ist die Art von Performance-Verbesserung, die Nutzer tatsächlich bemerken.
+
+## LoAF API: Überwachung echter Nutzererfahrung
+
+Hier ist etwas, das die meisten Leute überspringen.. tatsächlich zu überwachen, was Nutzer erleben.
+
+Ich habe LoAF API-Überwachung hinzugefügt. Das ist Long Animation Frames. Es verfolgt, wann die Seite zu viel Arbeit macht und ruckelige Animationen oder verzögerte Interaktionen verursacht.
+
+Diese Daten gehen zu Google Analytics 4, damit ich genau sehen kann, wann und wo Nutzer Verlangsamungen erleben.
+
+Die meisten Performance-Optimierungen werden mit synthetischen Tests gemacht. Lighthouse ausführen, einen Score bekommen, basierend darauf optimieren.
+
+Aber das ist nicht echte Nutzererfahrung. Echte Nutzer haben langsame Geräte, schlechte Verbindungen, viele Browser-Erweiterungen, was auch immer.
+
+LoAF sagt mir, was tatsächlich für echte Nutzer passiert. Wenn ich hohe LoAF-Werte sehe, weiß ich, dass es ein Problem gibt, das ich beheben muss.
+
+Das geht um kontinuierliche Überwachung, nicht nur einmal gute Scores zu erreichen und es erledigt zu nennen.
+
+## Kritisches CSS und asynchrones Laden
+
+CSS blockiert das Rendering. Der Browser muss all dein CSS herunterladen und parsen, bevor er etwas zeigen kann.
+
+Ich inline kritisches CSS. Die absolut minimalen Styles, die benötigt werden, um Above-the-fold-Content zu rendern, gehen direkt ins HTML. Alles andere lädt asynchron.
+
+Nutzer sehen Content sofort. Die Seite ist funktional, bevor all das Styling lädt.
+
+Gleicher Ansatz mit JavaScript. Jedes JS, das nicht kritisch für das initiale Rendering ist, wird verzögert oder async geladen.
+
+Das Ziel ist, so schnell wie möglich etwas Nützliches auf den Bildschirm zu bekommen. Politur kann später kommen.
+
+## Statische Website-Generierung
+
+Dieser gesamte Blog wird zur Build-Zeit vorgerendert.
+
+Wenn du eine Seite besuchst, gibt es kein serverseitiges Rendering. Keine Datenbankabfragen. Keine dynamische Generierung.
+
+Nur statisches HTML, das direkt von einem CDN ausgeliefert wird.
+
+Das ist von Natur aus schnell. Es gibt keine Berechnung, wenn du eine Seite anforderst. Es ist nur.. hier ist die Datei, ausgeliefert von einem Server in deiner Nähe.
+
+Die Build-Zeit beträgt etwa 8,5 Sekunden für die gesamte Website. Das ist akzeptabel. Besonders da es nur passiert, wenn ich deploye, nicht bei jeder Anfrage.
+
+Statische Generierung ist nicht für alles richtig. Wenn du Echtzeit-Daten oder nutzerspezifischen Content brauchst, brauchst du dynamisches Rendering.
+
+Aber für einen Blog? Für Content, der sich nicht bei jeder Anfrage ändert? Statisch ist der richtige Weg.
+
+## CDN und Edge-Hosting
+
+Wo du hostest, zählt fast genauso viel wie wie du baust.
+
+Ich nutze Edge-Hosting. Die statischen Dateien werden auf Server auf der ganzen Welt verteilt. Wenn du besuchst, lädst du vom Server, der dir am nächsten ist.
+
+Wenn du in Tokio bist, lädst du von Tokio. Wenn du in London bist, lädst du von London.
+
+Das reduziert die Latenz dramatisch. Statt dass jede Anfrage zu einem einzelnen Server irgendwo geht, gehen Anfragen zur nächsten Edge-Location.
+
+Für ein globales Publikum ist das riesig. Eine Website, die in den USA gehostet wird und Nutzer in Asien bedient, wird immer langsamer sein als eine Website, die von Asien aus ausgeliefert wird.
+
+Edge-Hosting behebt das. Jeder bekommt schnelle Ladezeiten, egal wo sie sind.
+
+## Kein unnötiges JavaScript
+
+Hier ist eine einfache.. wenn du JavaScript für etwas nicht brauchst, nutze kein JavaScript.
+
+So viele Websites liefern Hunderte von Kilobytes JS aus, nur um statischen Content anzuzeigen. Animationen, die CSS sein könnten. Interaktionen, die HTML sein könnten.
+
+Ich liefere fast null JavaScript für die meisten Seiten aus. Blogbeiträge sind nur HTML und CSS. Kein React. Kein Vue. Kein Framework-Overhead.
+
+Wenn eine Seite Interaktivität braucht, füge ich es nur zu dieser Komponente hinzu. Der Rest bleibt statisch.
+
+Das ist Astros Islands-Architektur, und sie ist brilliant für Content-Websites. 95 Prozent deines Contents ist statisch. Nur die interaktiven Teile bekommen JavaScript.
+
+Die meisten Blogs brauchen überhaupt kein JS. Nur schnelles HTML und CSS.
+
+## Lazy Loading und progressive Verbesserung
+
+Nicht alles muss sofort laden.
+
+Bilder unterhalb des Fold? Lazy geladen. Sie laden, wenn du in ihre Nähe scrollst.
+
+Drittanbieter-Embeds wie YouTube-Videos? Lazy geladen mit einem Platzhalter, bis du tatsächlich schauen willst.
+
+Kommentar-Bereiche? Geladen bei Interaktion.
+
+Das initiale Seitenladen ist nur der Content, den du tatsächlich liest. Alles andere wartet, bis du es brauchst.
+
+Das hält die initialen Ladezeiten minimal, während immer noch volle Funktionalität bereitgestellt wird, wenn du sie willst.
+
+## Schriftarten-Optimierung
+
+Web-Schriftarten sind ein weiterer üblicher Performance-Engpass.
+
+Ich nutze font-display: swap, damit Text sofort mit einer Systemschrift erscheint, dann zur Web-Schriftart wechselt, wenn sie lädt.
+
+Nutzer sehen Text sofort statt auf Schriftarten zu warten. Wenn die Schriftart schnell lädt, bemerken sie den Wechsel kaum. Wenn sie langsam lädt, bekommen sie immer noch lesbaren Content.
+
+Ich preloade auch kritische Schriftarten, die Above-the-fold verwendet werden. Diese laden mit höherer Priorität, damit der Wechsel schneller passiert.
+
+Und ich lade nur Schriftgewichte, die ich tatsächlich nutze. Kein Laden von regular, medium, semi-bold, bold und extra-bold, wenn ich nur regular und bold nutze.
+
+Jedes Schriftgewicht ist eine weitere zu herunterladende Datei. Lade nur, was du brauchst.
+
+## HTTP/2 und moderne Protokolle
+
+Das geht mehr um Hosting-Konfiguration, aber es zählt.
+
+HTTP/2 erlaubt Multiplexing. Mehrere Dateien können gleichzeitig über eine einzelne Verbindung übertragen werden.
+
+In HTTP/1.1 konnten Browser nur ein paar Dateien auf einmal laden. Mit HTTP/2 lädt alles parallel.
+
+Ich stelle auch sicher, dass Kompression aktiviert ist. Gzip mindestens, Brotli wenn möglich. Text-Assets werden vor der Übertragung komprimiert.
+
+HTML, CSS und JavaScript komprimieren wirklich gut. Oft 70 bis 80 Prozent Reduzierung der Dateigröße.
+
+Das wird normalerweise von deinem Host gehandhabt, aber verifiziere, dass es tatsächlich funktioniert. Nutze ein Tool wie WebPageTest, um zu überprüfen, ob deine Assets komprimiert werden.
+
+## Eliminierung render-blockierender Ressourcen
+
+Jedes externe Stylesheet oder Script, das im `<head>` lädt, blockiert das Rendering.
+
+Der Browser kann nichts zeigen, bis diese fertig geladen sind.
+
+Ich minimiere render-blockierende Ressourcen. Kritisches CSS wird geinlined. Scripts werden verzögert oder nach unten verschoben. Schriftarten werden vorgeladen.
+
+Das Ziel ist, den Browser so schnell wie möglich mit dem Rendering beginnen zu lassen.
+
+Jede Ressource, die das Rendering blockiert, fügt zu deiner First Contentful Paint und Largest Contentful Paint Zeit hinzu.
+
+Das sind Core Web Vitals Metriken. Sie beeinflussen direkt SEO-Rankings.
+
+Schneller ist besser. Und das bedeutet, Blocker zu eliminieren.
+
+## Die Ergebnisse
+
+Also was bringt dir das alles?
+
+Diese Website lädt in 0,3 Sekunden. Manchmal schneller, abhängig von deiner Verbindung und Location.
+
+Google PageSpeed Insights zeigt perfekte 100er-Scores über alle Metriken. Performance, Accessibility, Best Practices, SEO. Alle 100.
+
+Du kannst das selbst verifizieren. Geh zu apatero.com und lass es durch PageSpeed Insights laufen. Die Scores sind öffentlich.
+
+Core Web Vitals sind alle im grünen Bereich. Largest Contentful Paint unter 1 Sekunde. First Input Delay unter 10 Millisekunden. Cumulative Layout Shift unter 0,1.
+
+Das sind nicht nur Eitelkeits-Metriken. Sie korrelieren mit echter Nutzererfahrung und SEO-Performance.
+
+Schnelle Websites ranken besser. Schnelle Websites konvertieren besser. Schnelle Websites fühlen sich besser an.
+
+## Was tatsächlich den Unterschied gemacht hat
+
+Nicht alle Optimierungen sind gleich. Einige haben riesigen Impact. Einige sind marginal.
+
+Hier ist, was den größten Unterschied für mich gemacht hat:
+
+**Astro wählen.** Das ist 50 Prozent des Gewinns. Mit einer schnellen Grundlage zu beginnen, zählt mehr als jede einzelne Optimierung.
+
+**Bildoptimierung.** AVIF/WebP-Formate und responsive Bilder haben wahrscheinlich 1 bis 2 Sekunden auf bildlastigen Seiten gespart.
+
+**Statische Generierung.** Kein serverseitiges Rendering bedeutet keine Verarbeitungsverzögerung. Sofortige Antworten.
+
+**Edge-Hosting.** Von nahegelegenen Locations auszuliefern hat die Latenz global um 100 bis 200 Millisekunden reduziert.
+
+**Minimales JavaScript.** Keinen unnötigen Code auszuliefern ist kostenlose Performance.
+
+Alles andere ist Politur. Preconnect, Lazy Loading, Schriftarten-Optimierung.. sie helfen alle, aber die großen Gewinne kommen von den Grundlagen.
+
+Mach die Grundlage zuerst richtig. Dann optimiere die Details.
+
+## Du kannst das auch
+
+Hier ist die Sache.. nichts davon ist Magie. Nichts davon erfordert tiefe technische Expertise.
+
+Wenn du dieses Astro-Template nutzt, sind die meisten dieser Optimierungen bereits eingebaut. Du bekommst sie kostenlos, nur durch die Nutzung des Templates.
+
+Wenn du auf einer anderen Plattform bist, kannst du viele davon immer noch implementieren. Bildoptimierung funktioniert überall. Lazy Loading funktioniert überall. Schriftarten-Optimierung funktioniert überall.
+
+Beginne mit den größten Gewinnen. Optimiere Bilder. Minimiere JavaScript. Wähle schnelleres Hosting.
+
+Dann arbeite die Liste ab. Preconnect-Hints. Lazy Loading. Schriftarten-Optimierung. Render-Blocking-Eliminierung.
+
+Jede Optimierung potenziert sich mit den anderen. Rasiere 100 Millisekunden hier ab, 200 Millisekunden dort, und plötzlich bist du doppelt so schnell.
+
+## Zählt das tatsächlich für SEO?
+
+Ja. Unzweifelhaft ja.
+
+Google nutzt Core Web Vitals als Ranking-Faktor. Schnelle Websites bekommen einen Boost. Langsame Websites werden bestraft.
+
+Es ist nicht der einzige Faktor. Content-Qualität zählt mehr. Relevanz zählt mehr. Autorität zählt mehr.
+
+Aber alles andere gleich rankt die schnellere Website höher.
+
+Ich habe es in meinen eigenen Projekten gesehen. Verbessere Seitengeschwindigkeit, sehe Rankings sich verbessern. Es ist nicht dramatisch, aber es ist messbar.
+
+Und selbst wenn es kein Ranking-Faktor wäre, würde es immer noch für Nutzererfahrung und Conversion-Raten zählen.
+
+Schnelle Websites fühlen sich professionell an. Sie fühlen sich vertrauenswürdig an. Sie machen Leute Lust, zu bleiben.
+
+Langsame Websites fühlen sich kaputt an. Sie lassen Leute gehen.
+
+Das zählt für dein Business unabhängig von SEO.
+
+## Das Fazit
+
+Perfekte PageSpeed-Scores und Sub-Sekunden-Ladezeiten zu bekommen ist keine Magie. Es ist gute Entscheidungen zu treffen und bekannte Optimierungen zu implementieren.
+
+Wähle eine schnelle Grundlage. Optimiere Bilder aggressiv. Minimiere JavaScript. Nutze Edge-Hosting. Eliminiere render-blockierende Ressourcen.
+
+Mach diese Dinge und du wirst schnell sein. Vielleicht nicht 0,3 Sekunden schnell, aber schnell genug, um gut zu scoren und eine großartige Erfahrung zu bieten.
+
+Die Spezifika zählen weniger als die Prinzipien. Beginne schnell. Bleib schlank. Lade nur, was du brauchst. Liefere von in der Nähe aus.
+
+Wenn du alle diese Optimierungen in Aktion sehen willst, schau dir den Code für diesen Blog an. Er ist Open Source. Alles, was ich beschrieben habe, ist implementiert und verfügbar zur Nutzung.
+
+Oder besuche einfach apatero.com und lass es durch PageSpeed Insights laufen. Sieh die Scores selbst.
+
+Schnelle Websites sind möglich. Sie erfordern nur, dass es dir genug wichtig ist, sie zu realisieren.

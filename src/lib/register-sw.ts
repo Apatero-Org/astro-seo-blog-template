@@ -36,6 +36,42 @@ export function registerServiceWorker() {
   }
 }
 
+// Long Animation Frames (LoAF) API Monitoring for INP Optimization
+export function initLoAFMonitoring() {
+  // Check if PerformanceObserver and LoAF are supported
+  if ('PerformanceObserver' in window && PerformanceObserver.supportedEntryTypes?.includes('long-animation-frame')) {
+    const observer = new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) {
+        // Long animation frame detected (>50ms)
+        const duration = entry.duration;
+
+        if (duration > 50) {
+          // Send to Google Analytics if available
+          if (typeof gtag !== 'undefined') {
+            gtag('event', 'long_animation_frame', {
+              event_category: 'Performance',
+              event_label: 'LoAF',
+              value: Math.round(duration),
+              non_interaction: true,
+            });
+          }
+
+          // Log to console in development
+          if (import.meta.env.DEV) {
+            console.warn(`[LoAF] Long animation frame detected: ${duration}ms`, entry);
+          }
+        }
+      }
+    });
+
+    try {
+      observer.observe({ type: 'long-animation-frame', buffered: true });
+    } catch (err) {
+      console.error('Failed to observe long-animation-frame:', err);
+    }
+  }
+}
+
 // Web Vitals Monitoring - Send to Google Analytics
 export function initWebVitals() {
   // Dynamically import web-vitals to avoid increasing initial bundle
@@ -73,4 +109,5 @@ export function initWebVitals() {
 if (typeof window !== 'undefined') {
   registerServiceWorker();
   initWebVitals();
+  initLoAFMonitoring();
 }

@@ -1,0 +1,48 @@
+---
+import { SITE_CONFIG } from '../../data/site-config';
+
+export interface Props {
+  name: string;
+  description: string;
+  thumbnailUrl: string;
+  uploadDate: string;
+  duration?: string; // Format: PT#M#S (e.g., PT5M30S for 5 minutes 30 seconds)
+  contentUrl?: string;
+  embedUrl?: string;
+  transcript?: string;
+}
+
+const {
+  name,
+  description,
+  thumbnailUrl,
+  uploadDate,
+  duration,
+  contentUrl,
+  embedUrl,
+  transcript,
+} = Astro.props;
+
+const videoSchema = {
+  "@context": "https://schema.org",
+  "@type": "VideoObject",
+  "name": name,
+  "description": description,
+  "thumbnailUrl": thumbnailUrl.startsWith('http') ? thumbnailUrl : `${SITE_CONFIG.url}${thumbnailUrl}`,
+  "uploadDate": uploadDate,
+  ...(duration && { "duration": duration }),
+  ...(contentUrl && { "contentUrl": contentUrl.startsWith('http') ? contentUrl : `${SITE_CONFIG.url}${contentUrl}` }),
+  ...(embedUrl && { "embedUrl": embedUrl }),
+  ...(transcript && { "transcript": transcript }),
+  "publisher": {
+    "@type": "Organization",
+    "name": SITE_CONFIG.title,
+    "logo": {
+      "@type": "ImageObject",
+      "url": `${SITE_CONFIG.url}${SITE_CONFIG.ogImage}`
+    }
+  }
+};
+---
+
+<script type="application/ld+json" set:html={JSON.stringify(videoSchema)} />

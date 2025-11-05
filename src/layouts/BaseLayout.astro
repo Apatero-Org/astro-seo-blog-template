@@ -81,7 +81,11 @@ const isBlogPage = Astro.url.pathname.includes('/blog') || Astro.url.pathname.st
     <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
 
-    <!-- Resource Hints for Performance -->
+    <!-- Resource Hints for Performance - 2025 Best Practices -->
+    <!-- preconnect for critical third-parties (DNS + TCP + TLS) -->
+    <link rel="preconnect" href="https://www.google-analytics.com" crossorigin />
+    <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin />
+    <!-- dns-prefetch fallback for older browsers -->
     <link rel="dns-prefetch" href="https://www.google-analytics.com" />
     <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
 
@@ -172,11 +176,41 @@ const isBlogPage = Astro.url.pathname.includes('/blog') || Astro.url.pathname.st
       }
     </script>
 
-    <!-- Service Worker & Web Vitals -->
+    <!-- Service Worker & Web Vitals & LoAF Monitoring -->
     <script>
-      import { registerServiceWorker, initWebVitals } from '../lib/register-sw';
+      import { registerServiceWorker, initWebVitals, initLoAFMonitoring } from '../lib/register-sw';
       registerServiceWorker();
       initWebVitals();
+      initLoAFMonitoring();
+    </script>
+
+    <!-- Speculation Rules API for Prefetching (Chrome 121+) -->
+    <script type="speculationrules">
+      {
+        "prerender": [
+          {
+            "where": {
+              "and": [
+                { "href_matches": "/*" },
+                { "not": { "href_matches": "/admin/*" } },
+                { "not": { "href_matches": "*.pdf" } }
+              ]
+            },
+            "eagerness": "moderate"
+          }
+        ],
+        "prefetch": [
+          {
+            "where": {
+              "and": [
+                { "href_matches": "/*" },
+                { "not": { "selector_matches": ".no-prefetch" } }
+              ]
+            },
+            "eagerness": "moderate"
+          }
+        ]
+      }
     </script>
   </head>
   <body role="document">

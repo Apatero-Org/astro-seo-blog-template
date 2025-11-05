@@ -182,14 +182,18 @@ const articleData = {
         <span>•</span>
         <span>{readingTime} min read</span>
       </div>
-      
-      <h1 class="text-4xl font-display font-bold mb-4 text-balance">
-        {post.data.title}
-      </h1>
-      
-      <p class="text-lg text-text-muted">
-        {post.data.description}
-      </p>
+
+      <!-- Speakable Schema Markup for Voice Search (Google Assistant) -->
+      <div itemProp="speakable" itemScope itemType="https://schema.org/SpeakableSpecification">
+        <meta itemProp="cssSelector" content="h1, .article-intro" />
+        <h1 class="text-4xl font-display font-bold mb-4 text-balance">
+          {post.data.title}
+        </h1>
+
+        <p class="text-lg text-text-muted article-intro">
+          {post.data.description}
+        </p>
+      </div>
     </header>
     
     {/* Hero Image */}

@@ -109,6 +109,8 @@ export default defineConfig({
         limitInputPixels: false,
       },
     },
+    // Mobile-First 2025: Responsive image sizes optimized for mobile devices
+    remotePatterns: [{ protocol: 'https' }],
   },
   prefetch: {
     prefetchAll: true,

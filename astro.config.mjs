@@ -4,6 +4,8 @@ import mdx from '@astrojs/mdx';
 import react from '@astrojs/react';
 import markdoc from '@astrojs/markdoc';
 import node from '@astrojs/node';
+import sitemap from '@astrojs/sitemap';
+import partytown from '@astrojs/partytown';
 
 // https://astro.build/config
 export default defineConfig({
@@ -16,6 +18,31 @@ export default defineConfig({
     mdx(),
     react(),
     markdoc(),
+    sitemap({
+      i18n: {
+        defaultLocale: 'en',
+        locales: {
+          en: 'en-US',
+          es: 'es-ES',
+          fr: 'fr-FR',
+          de: 'de-DE',
+          ja: 'ja-JP',
+          ko: 'ko-KR',
+          zh: 'zh-CN',
+          pt: 'pt-BR',
+          he: 'he-IL',
+          hi: 'hi-IN',
+          id: 'id-ID',
+          vi: 'vi-VN',
+        },
+      },
+      filter: (page) => !page.includes('/admin/') && !page.includes('/api/'),
+    }),
+    partytown({
+      config: {
+        forward: ['dataLayer.push'],
+      },
+    }),
   ],
   output: 'server',
   adapter: node({
@@ -44,9 +71,26 @@ export default defineConfig({
         'lodash'
       ],
     },
+    build: {
+      cssCodeSplit: true,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'react-vendor': ['react', 'react-dom'],
+          },
+        },
+      },
+    },
   },
   image: {
     domains: ['localhost'],
+    service: {
+      entrypoint: 'astro/assets/services/sharp',
+    },
+  },
+  prefetch: {
+    prefetchAll: true,
+    defaultStrategy: 'viewport',
   },
   markdown: {
     shikiConfig: {

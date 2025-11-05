@@ -97,8 +97,11 @@ if (post) {
                   <img
                     src={relatedPost.data.heroImage}
                     alt={relatedPost.data.heroImageAlt || relatedPost.data.title}
-                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    width="80"
+                    height="80"
                     loading="lazy"
+                    decoding="async"
+                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 </div>
               )}
@@ -128,8 +131,11 @@ if (post) {
               <img
                 src={featuredPost.data.heroImage}
                 alt={featuredPost.data.heroImageAlt || featuredPost.data.title}
-                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                width="400"
+                height="225"
                 loading="lazy"
+                decoding="async"
+                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />
             </div>
           )}
@@ -180,6 +186,10 @@ if (post) {
             <img
               src={authorInfo.avatar}
               alt={authorInfo.name}
+              width="48"
+              height="48"
+              loading="lazy"
+              decoding="async"
               class="w-12 h-12 rounded-full object-cover flex-shrink-0"
             />
           ) : (

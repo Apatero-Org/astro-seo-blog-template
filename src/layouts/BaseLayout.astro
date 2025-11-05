@@ -78,16 +78,28 @@ const isBlogPage = Astro.url.pathname.includes('/blog') || Astro.url.pathname.st
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Resource Hints for Performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="dns-prefetch" href="https://www.google-analytics.com" />
+    <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+
+    <!-- Favicon -->
     <link rel="icon" type="image/png" sizes="32x32" href="/Favicon.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/Favicon.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/Favicon.png" />
+
+    <!-- RSS Feed -->
+    <link rel="alternate" type="application/rss+xml" title={`${SITE_CONFIG.title} RSS Feed`} href="/rss.xml" />
+
     <meta name="generator" content={Astro.generator} />
 
-    <!-- Google Analytics - Configure with your GA_MEASUREMENT_ID in site-config.json -->
+    <!-- Google Analytics with Partytown for better performance -->
     {GA_MEASUREMENT_ID && (
       <>
-        <script async src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}></script>
-        <script is:inline define:vars={{ GA_MEASUREMENT_ID }}>
+        <script type="text/partytown" async src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}></script>
+        <script type="text/partytown" define:vars={{ GA_MEASUREMENT_ID }}>
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());
@@ -96,11 +108,13 @@ const isBlogPage = Astro.url.pathname.includes('/blog') || Astro.url.pathname.st
       </>
     )}
 
-    <!-- Google Fonts - non-render-blocking -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- Load fonts async to prevent render blocking -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'" />
+    <!-- Google Fonts - Optimized with font-display swap -->
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap"
+      media="print"
+      onload="this.media='all'; this.onload=null;"
+    />
     <noscript>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" />
     </noscript>
@@ -151,6 +165,11 @@ const isBlogPage = Astro.url.pathname.includes('/blog') || Astro.url.pathname.st
     </script>
   </head>
   <body>
+    <!-- Skip to content link for accessibility -->
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-text focus:text-background focus:rounded">
+      Skip to content
+    </a>
+
     <!-- Floating Theme Toggle and Language Switcher -->
     {!hideThemeToggle && (
       <div class="fixed top-4 right-4 z-50 flex items-center gap-2">
@@ -225,9 +244,9 @@ const isBlogPage = Astro.url.pathname.includes('/blog') || Astro.url.pathname.st
         </svg>
       </button>
     )}
-    
+
     <div class="min-h-screen flex flex-col">
-      <main class="flex-grow">
+      <main id="main-content" class="flex-grow">
         <slot />
       </main>
       <Footer siteName={siteName} />

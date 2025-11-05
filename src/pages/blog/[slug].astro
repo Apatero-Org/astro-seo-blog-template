@@ -1,4 +1,5 @@
 ---
+import { Image } from 'astro:assets';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { formatDate, calculateReadingTime, extractHeadings, extractFAQ, extractReviews, slugify } from '../../lib/utils';
 import PostCard from '../../components/blog/PostCard.astro';
@@ -187,6 +188,11 @@ const articleData = {
         <img
           src={post.data.heroImage}
           alt={post.data.heroImageAlt || `${post.data.title} - Complete ${post.data.category} guide and tutorial`}
+          width="1200"
+          height="630"
+          loading="eager"
+          decoding="async"
+          fetchpriority="high"
           class="w-full h-auto"
         />
       </div>
@@ -257,8 +263,11 @@ const articleData = {
                     <img
                       src={relatedPost.data.heroImage}
                       alt={relatedPost.data.heroImageAlt || `${relatedPost.data.title} - Related ${relatedPost.data.category} tutorial`}
-                      class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      width="600"
+                      height="338"
                       loading="lazy"
+                      decoding="async"
+                      class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                   </div>
                 )}

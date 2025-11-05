@@ -31,5 +31,34 @@ export const onRequest = defineMiddleware(async (context, next) => {
     );
   }
 
+  // Add sophisticated caching headers based on resource type
+  const pathname = url.pathname;
+  const contentType = response.headers.get('content-type') || '';
+
+  // Static assets - aggressive caching (1 year)
+  if (pathname.match(/\.(js|css|woff|woff2|ttf|eot|jpg|jpeg|png|webp|avif|gif|svg|ico)$/)) {
+    response.headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+  }
+  // HTML pages - revalidate frequently (1 hour, must revalidate)
+  else if (contentType.includes('text/html')) {
+    response.headers.set('Cache-Control', 'public, max-age=3600, must-revalidate');
+  }
+  // API/dynamic routes - no cache
+  else if (pathname.startsWith('/api/') || pathname.startsWith('/admin/')) {
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
+  }
+  // Default - moderate caching (1 day)
+  else {
+    response.headers.set('Cache-Control', 'public, max-age=86400, stale-while-revalidate=86400');
+  }
+
+  // Add ETags for better caching
+  if (!response.headers.has('ETag')) {
+    // ETag will be added by the server/CDN
+    response.headers.set('Vary', 'Accept-Encoding');
+  }
+
   return response;
 });

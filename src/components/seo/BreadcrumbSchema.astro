@@ -1,0 +1,38 @@
+---
+import { SITE_CONFIG } from '../../data/site-config';
+
+export interface BreadcrumbItem {
+  name: string;
+  url: string;
+}
+
+export interface Props {
+  items: BreadcrumbItem[];
+}
+
+const { items } = Astro.props;
+
+// Always start with Home
+const breadcrumbList = [
+  {
+    "@type": "ListItem",
+    "position": 1,
+    "name": "Home",
+    "item": SITE_CONFIG.url
+  },
+  ...items.map((item, index) => ({
+    "@type": "ListItem",
+    "position": index + 2,
+    "name": item.name,
+    "item": item.url.startsWith('http') ? item.url : `${SITE_CONFIG.url}${item.url}`
+  }))
+];
+
+const breadcrumbSchema = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": breadcrumbList
+};
+---
+
+<script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />

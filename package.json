@@ -45,11 +45,17 @@
     "lodash": "^4.17.21",
     "lodash.debounce": "^4.0.8",
     "marked": "^16.2.1",
-    "sharp": "^0.34.3",
-    "tailwind-merge": "^3.3.1"
+    "sharp": "^0.34.4",
+    "tailwind-merge": "^3.3.1",
+    "web-vitals": "^5.1.0",
+    "workbox-precaching": "^7.3.0",
+    "workbox-routing": "^7.3.0",
+    "workbox-strategies": "^7.3.0",
+    "workbox-window": "^7.3.0"
   },
   "devDependencies": {
     "@lhci/cli": "^0.15.1",
-    "lighthouse": "^13.0.1"
+    "lighthouse": "^13.0.1",
+    "terser": "^5.44.0"
   }
 }

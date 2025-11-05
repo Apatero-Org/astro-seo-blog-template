@@ -51,6 +51,9 @@ export default defineConfig({
   compressHTML: true,
   build: {
     inlineStylesheets: 'always', // Inline all stylesheets to prevent render blocking
+    assets: '_astro',
+    // Aggressive minification
+    format: 'directory',
   },
   server: {
     port: parseInt(process.env.PORT || '4321'),
@@ -73,19 +76,38 @@ export default defineConfig({
     },
     build: {
       cssCodeSplit: true,
+      minify: 'terser',
+      terserOptions: {
+        compress: {
+          drop_console: true,
+          drop_debugger: true,
+          pure_funcs: ['console.log', 'console.info'],
+        },
+      },
       rollupOptions: {
         output: {
-          manualChunks: {
-            'react-vendor': ['react', 'react-dom'],
+          manualChunks: (id, { getModuleInfo }) => {
+            // Only split chunks for client build
+            // Vendor chunks for better caching
+            if (id.includes('node_modules')) {
+              if (id.includes('react') || id.includes('react-dom')) {
+                return 'react-vendor';
+              }
+              // All other node_modules stay in default chunks
+            }
           },
         },
       },
+      chunkSizeWarningLimit: 150, // Warn if chunks exceed 150KB
     },
   },
   image: {
-    domains: ['localhost'],
+    domains: ['localhost', 'astroseoblog.com'],
     service: {
       entrypoint: 'astro/assets/services/sharp',
+      config: {
+        limitInputPixels: false,
+      },
     },
   },
   prefetch: {

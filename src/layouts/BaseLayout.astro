@@ -163,13 +163,20 @@ const isBlogPage = Astro.url.pathname.includes('/blog') || Astro.url.pathname.st
         }
         return 'light';
       })();
-      
+
       if (theme === 'dark') {
         document.documentElement.classList.add('dark');
       }
     </script>
+
+    <!-- Service Worker & Web Vitals -->
+    <script>
+      import { registerServiceWorker, initWebVitals } from '../lib/register-sw';
+      registerServiceWorker();
+      initWebVitals();
+    </script>
   </head>
-  <body>
+  <body role="document">
     <!-- Skip to content link for accessibility -->
     <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-text focus:text-background focus:rounded">
       Skip to content
@@ -251,9 +258,19 @@ const isBlogPage = Astro.url.pathname.includes('/blog') || Astro.url.pathname.st
     )}
 
     <div class="min-h-screen flex flex-col">
-      <main id="main-content" class="flex-grow">
+      <nav role="navigation" aria-label="Main navigation" class="sr-only">
+        <!-- Screen reader navigation -->
+        <ul>
+          <li><a href="/">Home</a></li>
+          <li><a href="/blog">Blog</a></li>
+          <li><a href="#main-content">Skip to content</a></li>
+        </ul>
+      </nav>
+
+      <main id="main-content" role="main" aria-label="Main content" class="flex-grow">
         <slot />
       </main>
+
       <Footer siteName={siteName} />
     </div>
     

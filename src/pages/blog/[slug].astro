@@ -1,6 +1,7 @@
 ---
 import { Image } from 'astro:assets';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import BreadcrumbSchema from '../../components/seo/BreadcrumbSchema.astro';
 import { formatDate, calculateReadingTime, extractHeadings, extractFAQ, extractReviews, slugify } from '../../lib/utils';
 import PostCard from '../../components/blog/PostCard.astro';
 import BlogCTA from '../../components/blog/BlogCTA.astro';
@@ -141,10 +142,19 @@ const articleData = {
   faq={faqItems.length > 0 ? faqItems : undefined}
   reviews={reviewItems.length > 0 ? reviewItems : undefined}
 >
+  <!-- Breadcrumb Schema for SEO -->
+  <BreadcrumbSchema
+    items={[
+      { name: 'Blog', url: '/blog' },
+      { name: post.data.category, url: `/blog/category/${post.data.category.toLowerCase()}` },
+      { name: post.data.title, url: `/blog/${post.slug}` }
+    ]}
+  />
+
   <div class="container py-12">
     <div class="grid lg:grid-cols-[1fr,320px] gap-12">
       <!-- Main Content -->
-      <article class="max-w-none">
+      <article class="max-w-none" itemscope itemtype="https://schema.org/BlogPosting">
     <!-- Breadcrumb -->
     <div class="flex items-center gap-3 mb-6">
       <a href="/blog" class="text-text-muted hover:text-text transition-colors">

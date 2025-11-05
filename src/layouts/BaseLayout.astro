@@ -85,6 +85,22 @@ const isBlogPage = Astro.url.pathname.includes('/blog') || Astro.url.pathname.st
     <link rel="dns-prefetch" href="https://www.google-analytics.com" />
     <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
 
+    <!-- Preload Critical Fonts for FCP optimization -->
+    <link
+      rel="preload"
+      href="/_astro/inter-latin-400-normal.C38fXH4l.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/_astro/inter-latin-700-normal.CcwFXNfp.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+
     <!-- Favicon -->
     <link rel="icon" type="image/png" sizes="32x32" href="/Favicon.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/Favicon.png" />

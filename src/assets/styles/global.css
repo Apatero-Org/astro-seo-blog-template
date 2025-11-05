@@ -49,6 +49,64 @@
     @apply bg-text text-background;
   }
 
+  /* WCAG 2.2 Enhanced Focus Styles - 2.4.11 Focus Not Obscured (AA) */
+  /* Visible focus indicators for keyboard navigation */
+  *:focus-visible {
+    outline: 3px solid;
+    outline-color: #0066cc;
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  .dark *:focus-visible {
+    outline-color: #4da6ff;
+  }
+
+  /* Enhanced focus for interactive elements */
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 3px solid #0066cc;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(0, 102, 204, 0.1);
+  }
+
+  .dark a:focus-visible,
+  .dark button:focus-visible,
+  .dark input:focus-visible,
+  .dark textarea:focus-visible,
+  .dark select:focus-visible,
+  .dark [tabindex]:focus-visible {
+    outline-color: #4da6ff;
+    box-shadow: 0 0 0 4px rgba(77, 166, 255, 0.1);
+  }
+
+  /* Ensure focus is never hidden behind other content */
+  *:focus-visible {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* WCAG 2.2 Target Size - 2.5.8 (AA) minimum 24x24px */
+  /* All interactive targets meet minimum size */
+  button:not(.icon-only),
+  a:not(.icon-only),
+  [role="button"]:not(.icon-only) {
+    min-height: 24px;
+    min-width: 24px;
+  }
+
+  /* Icon buttons specifically marked get 44x44 (AAA) */
+  button.icon-only,
+  a.icon-only,
+  [role="button"].icon-only {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
   /* Hide scrollbars completely */
   ::-webkit-scrollbar {
     width: 0px;

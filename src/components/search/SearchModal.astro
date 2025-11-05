@@ -320,7 +320,7 @@ class BlogSearch {
   }
 }
 
-// Initialize search when DOM is loaded or after view transitions
+// Lazy initialization - only when search is actually triggered
 function initializeSearch() {
   // Prevent multiple initializations
   if (window.blogSearchInitialized) {
@@ -330,13 +330,51 @@ function initializeSearch() {
   new BlogSearch();
 }
 
-// Initialize on DOM load
-document.addEventListener('DOMContentLoaded', initializeSearch);
+// Lazy load on first interaction (idle strategy)
+function setupLazyInit() {
+  let initialized = false;
+
+  // Initialize on search trigger click
+  const searchTrigger = document.getElementById('search-trigger');
+  searchTrigger?.addEventListener('click', () => {
+    if (!initialized) {
+      initializeSearch();
+      initialized = true;
+    }
+  }, { once: false });
+
+  // Initialize on Ctrl+K / Cmd+K
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      if (!initialized) {
+        initializeSearch();
+        initialized = true;
+      }
+    }
+  });
+
+  // Prefetch search index on idle for better UX
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(() => {
+      if (!initialized) {
+        initializeSearch();
+        initialized = true;
+      }
+    }, { timeout: 2000 });
+  }
+}
+
+// Setup lazy initialization
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', setupLazyInit);
+} else {
+  setupLazyInit();
+}
 
 // Re-initialize after Astro view transitions
 document.addEventListener('astro:after-swap', () => {
   window.blogSearchInitialized = false;
-  initializeSearch();
+  setupLazyInit();
 });
 </script>
 

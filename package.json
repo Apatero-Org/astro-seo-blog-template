@@ -47,5 +47,9 @@
     "marked": "^16.2.1",
     "sharp": "^0.34.3",
     "tailwind-merge": "^3.3.1"
+  },
+  "devDependencies": {
+    "@lhci/cli": "^0.15.1",
+    "lighthouse": "^13.0.1"
   }
 }

@@ -1,10 +1,14 @@
 ---
-import { getCategories, getTags } from '../../lib/data';
+import { getCategories } from '../../lib/data';
 import { getPublishedBlogPosts } from '../../lib/posts';
-import { formatDate, calculateReadingTime } from '../../lib/utils';
-import { normalizeTagName } from '../../lib/tags';
 import { getTranslations } from '../../config/i18n';
 import { DEFAULT_LANGUAGE, getLanguagePrefix } from '../../config/languages';
+import SidebarRelatedPosts from './sidebar/SidebarRelatedPosts.astro';
+import SidebarFeaturedArticle from './sidebar/SidebarFeaturedArticle.astro';
+import SidebarArticleInfo from './sidebar/SidebarArticleInfo.astro';
+import SidebarAuthorInfo from './sidebar/SidebarAuthorInfo.astro';
+import SidebarCategories from './sidebar/SidebarCategories.astro';
+import SidebarPopularTags from './sidebar/SidebarPopularTags.astro';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -84,163 +88,10 @@ if (post) {
     </a>
   </div>
 
-  <!-- Related Posts in Sidebar -->
-  {relatedPostsForSidebar.length > 0 && (
-    <div class="border-t pt-8">
-      <h3 class="text-sm font-bold uppercase mb-4">{t.relatedArticles}</h3>
-      <div class="space-y-4">
-        {relatedPostsForSidebar.map((relatedPost) => (
-          <a href={`/blog/${relatedPost.slug}`} class="block group hover:bg-surface transition-colors rounded-lg p-2 -m-2">
-            <div class="flex gap-3">
-              {relatedPost.data.heroImage && (
-                <div class="w-20 h-20 flex-shrink-0 overflow-hidden rounded-lg">
-                  <img
-                    src={relatedPost.data.heroImage}
-                    alt={relatedPost.data.heroImageAlt || relatedPost.data.title}
-                    width="80"
-                    height="80"
-                    loading="lazy"
-                    decoding="async"
-                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-              )}
-              <div class="flex-1 min-w-0">
-                <div class="text-xs text-text-muted mb-1 uppercase font-medium">
-                  {relatedPost.data.category}
-                </div>
-                <h4 class="text-sm font-semibold line-clamp-2 group-hover:opacity-70 transition-opacity">
-                  {relatedPost.data.title}
-                </h4>
-              </div>
-            </div>
-          </a>
-        ))}
-      </div>
-    </div>
-  )}
-
-  <!-- Featured Article -->
-  {featuredPost && (
-    <div class="border-t pt-8">
-      <h3 class="text-sm font-bold uppercase mb-4">{t.featuredArticle}</h3>
-      <a href={`/blog/${featuredPost.slug}`} class="block group">
-        <div class="border border-border rounded-xl overflow-hidden hover:bg-surface transition-colors">
-          {featuredPost.data.heroImage && (
-            <div class="aspect-video overflow-hidden">
-              <img
-                src={featuredPost.data.heroImage}
-                alt={featuredPost.data.heroImageAlt || featuredPost.data.title}
-                width="400"
-                height="225"
-                loading="lazy"
-                decoding="async"
-                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              />
-            </div>
-          )}
-          <div class="p-4">
-            <div class="text-xs text-text-muted mb-2 uppercase font-medium">
-              {featuredPost.data.category}
-            </div>
-            <h4 class="font-semibold line-clamp-2 mb-2 group-hover:opacity-80 transition-opacity">
-              {featuredPost.data.title}
-            </h4>
-            <p class="text-sm text-text-muted line-clamp-2">
-              {featuredPost.data.description}
-            </p>
-          </div>
-        </div>
-      </a>
-    </div>
-  )}
-
-  <!-- Article Info -->
-  {post && readingTime && (
-    <div class="border-t pt-8">
-      <h3 class="text-sm font-bold uppercase mb-4">{t.articleInfo}</h3>
-      <div class="space-y-3 text-sm">
-        <div class="flex justify-between">
-          <span class="text-text-muted">{t.readingTime}</span>
-          <span class="font-medium">{readingTime} {t.minRead}</span>
-        </div>
-        <div class="flex justify-between">
-          <span class="text-text-muted">{t.category}</span>
-          <span class="font-medium">{post.data.category}</span>
-        </div>
-        <div class="flex justify-between">
-          <span class="text-text-muted">{t.published}</span>
-          <span class="font-medium">{formatDate(post.data.publishDate)}</span>
-        </div>
-      </div>
-    </div>
-  )}
-
-  <!-- Author Info -->
-  {authorInfo && (
-    <div class="border-t pt-8">
-      <h3 class="text-sm font-bold uppercase mb-4">{t.aboutTheAuthor}</h3>
-      <a href={`/author/${authorInfo.id}`} class="block group hover:bg-surface transition-colors rounded-lg p-2 -m-2">
-        <div class="flex items-center gap-3 mb-3">
-          {authorInfo.avatar ? (
-            <img
-              src={authorInfo.avatar}
-              alt={authorInfo.name}
-              width="48"
-              height="48"
-              loading="lazy"
-              decoding="async"
-              class="w-12 h-12 rounded-full object-cover flex-shrink-0"
-            />
-          ) : (
-            <div class="w-12 h-12 rounded-full bg-text text-background flex items-center justify-center font-bold flex-shrink-0">
-              {authorInfo.name.split(' ').map(name => name.charAt(0)).join('').slice(0, 2).toUpperCase()}
-            </div>
-          )}
-          <div class="min-w-0">
-            <h4 class="font-semibold text-sm group-hover:opacity-70 transition-opacity">{authorInfo.name}</h4>
-          </div>
-        </div>
-
-        {authorInfo.bio && (
-          <p class="text-xs text-text-muted mb-3 line-clamp-3">
-            {authorInfo.bio}
-          </p>
-        )}
-      </a>
-    </div>
-  )}
-
-  <!-- Categories -->
-  <div>
-    <h3 class="text-sm font-bold uppercase mb-4">{t.categories}</h3>
-    <div class="flex flex-wrap gap-2">
-      {categories.map((category) => {
-        const count = categoryCounts[category.name] || 0;
-        return (
-          <a
-            href={`/blog/category/${category.slug}`}
-            class="px-3 py-1 bg-surface rounded-full text-sm hover:bg-border transition-colors"
-          >
-            {category.name} ({count})
-          </a>
-        );
-      })}
-    </div>
-  </div>
-
-  <!-- Popular Tags -->
-  <div>
-    <h3 class="text-sm font-bold uppercase mb-4">{t.popularTags}</h3>
-    <div class="flex flex-wrap gap-2">
-      {popularTagsWithCounts.map(([tag, count]) => (
-        <a
-          href={`/blog/tag/${normalizeTagName(tag)}`}
-          class="px-3 py-1 bg-surface rounded-full text-sm hover:bg-border transition-colors"
-        >
-          #{tag} ({count})
-        </a>
-      ))}
-    </div>
-  </div>
+  <SidebarRelatedPosts relatedPosts={relatedPostsForSidebar} translations={t} />
+  <SidebarFeaturedArticle featuredPost={featuredPost} translations={t} />
+  <SidebarArticleInfo post={post} readingTime={readingTime} translations={t} />
+  <SidebarAuthorInfo authorInfo={authorInfo} translations={t} />
+  <SidebarCategories categories={categories} categoryCounts={categoryCounts} translations={t} />
+  <SidebarPopularTags popularTags={popularTagsWithCounts} translations={t} />
 </aside>

@@ -1,0 +1,42 @@
+---
+export interface Props {
+  featuredPost: any;
+  translations: any;
+}
+
+const { featuredPost, translations } = Astro.props;
+---
+
+{featuredPost && (
+  <div class="border-t pt-8">
+    <h3 class="text-sm font-bold uppercase mb-4">{translations.featuredArticle}</h3>
+    <a href={`/blog/${featuredPost.slug}`} class="block group">
+      <div class="border border-border rounded-xl overflow-hidden hover:bg-surface transition-colors">
+        {featuredPost.data.heroImage && (
+          <div class="aspect-video overflow-hidden">
+            <img
+              src={featuredPost.data.heroImage}
+              alt={featuredPost.data.heroImageAlt || featuredPost.data.title}
+              width="400"
+              height="225"
+              loading="lazy"
+              decoding="async"
+              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+          </div>
+        )}
+        <div class="p-4">
+          <div class="text-xs text-text-muted mb-2 uppercase font-medium">
+            {featuredPost.data.category}
+          </div>
+          <h4 class="font-semibold line-clamp-2 mb-2 group-hover:opacity-80 transition-opacity">
+            {featuredPost.data.title}
+          </h4>
+          <p class="text-sm text-text-muted line-clamp-2">
+            {featuredPost.data.description}
+          </p>
+        </div>
+      </div>
+    </a>
+  </div>
+)}

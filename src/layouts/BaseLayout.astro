@@ -92,6 +92,9 @@ const isBlogPage = Astro.url.pathname.includes('/blog') || Astro.url.pathname.st
     <link rel="icon" type="image/png" sizes="16x16" href="/Favicon.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/Favicon.png" />
 
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+
     <!-- RSS Feed -->
     <link rel="alternate" type="application/rss+xml" title={`${SITE_CONFIG.title} RSS Feed`} href="/rss.xml" />
 

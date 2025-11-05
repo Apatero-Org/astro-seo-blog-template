@@ -16,7 +16,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
   // Continue with the request
   const response = await next();
 
-  // Add security headers to all responses
+  // Add security headers to all responses (2025 best practices)
+  response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload'); // HSTS - 1 year
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');

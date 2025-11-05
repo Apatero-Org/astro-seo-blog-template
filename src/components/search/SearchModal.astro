@@ -244,7 +244,7 @@ class BlogSearch {
         <div class="flex gap-4">
           ${post.heroImage ? `
             <div class="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
-              <img src="${post.heroImage}" alt="${post.title} - ${post.category} tutorial and guide" class="w-full h-full object-cover" loading="lazy" />
+              <img src="${post.heroImage}" alt="${post.title} - ${post.category} tutorial and guide" width="64" height="64" loading="lazy" decoding="async" class="w-full h-full object-cover" />
             </div>
           ` : ''}
           <div class="flex-1 min-w-0">

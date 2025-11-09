@@ -2,7 +2,16 @@ import type { APIRoute } from 'astro';
 import fs from 'fs/promises';
 import path from 'path';
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, cookies }) => {
+  // Check authentication
+  const sessionToken = cookies.get('admin-session');
+  if (sessionToken?.value !== 'authenticated') {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
   try {
     const { imageName } = await request.json();
     

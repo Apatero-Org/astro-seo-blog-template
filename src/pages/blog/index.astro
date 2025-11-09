@@ -104,8 +104,11 @@ const aiCategories = ['AI', 'LLMs', 'Image Generation', 'Video Generation', 'Pro
                           <img
                             src={post.data.heroImage}
                             alt={post.data.heroImageAlt || `${post.data.title} - ${post.data.category} tutorial and guide`}
-                            class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            width="160"
+                            height="120"
                             loading="lazy"
+                            decoding="async"
+                            class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                           />
                         </div>
                       )}
@@ -260,9 +263,13 @@ const aiCategories = ['AI', 'LLMs', 'Image Generation', 'Video Generation', 'Pro
                       <div class="border border-border rounded-xl overflow-hidden hover:bg-surface transition-colors">
                         {post.data.heroImage && (
                           <div class="aspect-video overflow-hidden">
-                            <img 
-                              src={post.data.heroImage} 
+                            <img
+                              src={post.data.heroImage}
                               alt={post.data.heroImageAlt || `${post.data.title} - Featured ${post.data.category} article`}
+                              width="400"
+                              height="225"
+                              loading="lazy"
+                              decoding="async"
                               class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                             />
                           </div>

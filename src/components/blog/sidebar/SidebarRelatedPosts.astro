@@ -1,0 +1,43 @@
+---
+export interface Props {
+  relatedPosts: any[];
+  translations: any;
+}
+
+const { relatedPosts, translations } = Astro.props;
+---
+
+{relatedPosts.length > 0 && (
+  <div class="border-t pt-8">
+    <h3 class="text-sm font-bold uppercase mb-4">{translations.relatedArticles}</h3>
+    <div class="space-y-4">
+      {relatedPosts.map((relatedPost) => (
+        <a href={`/blog/${relatedPost.slug}`} class="block group hover:bg-surface transition-colors rounded-lg p-2 -m-2">
+          <div class="flex gap-3">
+            {relatedPost.data.heroImage && (
+              <div class="w-20 h-20 flex-shrink-0 overflow-hidden rounded-lg">
+                <img
+                  src={relatedPost.data.heroImage}
+                  alt={relatedPost.data.heroImageAlt || relatedPost.data.title}
+                  width="80"
+                  height="80"
+                  loading="lazy"
+                  decoding="async"
+                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+              </div>
+            )}
+            <div class="flex-1 min-w-0">
+              <div class="text-xs text-text-muted mb-1 uppercase font-medium">
+                {relatedPost.data.category}
+              </div>
+              <h4 class="text-sm font-semibold line-clamp-2 group-hover:opacity-70 transition-opacity">
+                {relatedPost.data.title}
+              </h4>
+            </div>
+          </div>
+        </a>
+      ))}
+    </div>
+  </div>
+)}

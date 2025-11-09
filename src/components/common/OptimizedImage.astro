@@ -1,0 +1,69 @@
+---
+import { Image } from 'astro:assets';
+
+export interface Props {
+  src: string;
+  alt: string;
+  width?: number;
+  height?: number;
+  class?: string;
+  loading?: 'lazy' | 'eager';
+  fetchpriority?: 'high' | 'low' | 'auto';
+  decoding?: 'async' | 'sync' | 'auto';
+  sizes?: string;
+}
+
+const {
+  src,
+  alt,
+  width = 1200,
+  height = 630,
+  class: className = '',
+  loading = 'lazy',
+  fetchpriority = 'auto',
+  decoding = 'async',
+  sizes,
+} = Astro.props;
+
+// Responsive widths for different screen sizes
+const widths = [400, 800, 1200, 1600];
+
+// Default sizes attribute for responsive images
+const defaultSizes = sizes || '(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px';
+
+// Check if src is external URL
+const isExternal = src.startsWith('http://') || src.startsWith('https://');
+
+// For external images, fall back to standard img tag with format hints
+if (isExternal) {
+  ---
+  <img
+    src={src}
+    alt={alt}
+    width={width}
+    height={height}
+    loading={loading}
+    decoding={decoding}
+    fetchpriority={fetchpriority}
+    class={className}
+  />
+  ---
+} else {
+  // For local images, use Astro Image component with AVIF/WebP support
+  ---
+  <Image
+    src={src}
+    alt={alt}
+    width={width}
+    height={height}
+    widths={widths}
+    sizes={defaultSizes}
+    format="webp"
+    quality={85}
+    loading={loading}
+    decoding={decoding}
+    fetchpriority={fetchpriority}
+    class={className}
+  />
+  ---
+}

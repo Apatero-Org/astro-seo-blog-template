@@ -8,4 +8,4 @@ Disallow: /api/
 Disallow: /_image/
 
 # Sitemap location
-Sitemap: https://apatero.com/sitemap.xml
+Sitemap: https://astroseoblog.com/sitemap.xml

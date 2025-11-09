@@ -1,44 +1,15 @@
-/* Fonts now loaded from Google Fonts CDN for better performance */
-/* Local font definitions kept as fallback */
+/* Self-hosted fonts for optimal performance and GDPR compliance */
+/* Using @fontsource packages with woff2 format for best compression */
 
-/*
-@font-face {
-  font-family: 'Bebas Neue';
-  font-style: normal;
-  font-weight: 400;
-  font-display: optional;
-  src: url('../fonts/bebas-neue-400.ttf') format('truetype');
-}
+/* Inter - Variable font with all weights */
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+@import '@fontsource/inter/700.css';
 
-@font-face {
-  font-family: 'Inter';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url('../fonts/inter-400.ttf') format('truetype');
-}
+/* Bebas Neue - Display font */
+@import '@fontsource/bebas-neue/400.css';
 
-@font-face {
-  font-family: 'Inter';
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url('../fonts/inter-500.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: 'Inter';
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url('../fonts/inter-600.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: 'Inter';
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: url('../fonts/inter-700.ttf') format('truetype');
-}
-*/
+/* All fonts use font-display: swap for optimal performance */
+/* woff2 format provides ~30% better compression than ttf */
+/* No external requests = faster load, better privacy, GDPR compliant */

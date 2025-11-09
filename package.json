@@ -31,10 +31,13 @@
     "@astrojs/markdoc": "^0.15.5",
     "@astrojs/mdx": "^4.3.4",
     "@astrojs/node": "^9.4.3",
+    "@astrojs/partytown": "^2.1.4",
     "@astrojs/react": "^4.3.0",
     "@astrojs/rss": "^4.0.12",
     "@astrojs/sitemap": "^3.5.1",
     "@astrojs/tailwind": "^6.0.2",
+    "@fontsource/bebas-neue": "^5.2.7",
+    "@fontsource/inter": "^5.2.8",
     "@tailwindcss/typography": "^0.5.16",
     "astro": "^5.13.5",
     "astro-seo": "^0.8.4",
@@ -44,7 +47,17 @@
     "lodash": "^4.17.21",
     "lodash.debounce": "^4.0.8",
     "marked": "^16.2.1",
-    "sharp": "^0.34.3",
-    "tailwind-merge": "^3.3.1"
+    "sharp": "^0.34.4",
+    "tailwind-merge": "^3.3.1",
+    "web-vitals": "^5.1.0",
+    "workbox-precaching": "^7.3.0",
+    "workbox-routing": "^7.3.0",
+    "workbox-strategies": "^7.3.0",
+    "workbox-window": "^7.3.0"
+  },
+  "devDependencies": {
+    "@lhci/cli": "^0.15.1",
+    "lighthouse": "^13.0.1",
+    "terser": "^5.44.0"
   }
 }

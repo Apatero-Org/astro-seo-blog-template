@@ -1,0 +1,31 @@
+---
+import { formatDate } from '../../../lib/utils';
+
+export interface Props {
+  post: any;
+  readingTime: number;
+  translations: any;
+}
+
+const { post, readingTime, translations } = Astro.props;
+---
+
+{post && readingTime && (
+  <div class="border-t pt-8">
+    <h3 class="text-sm font-bold uppercase mb-4">{translations.articleInfo}</h3>
+    <div class="space-y-3 text-sm">
+      <div class="flex justify-between">
+        <span class="text-text-muted">{translations.readingTime}</span>
+        <span class="font-medium">{readingTime} {translations.minRead}</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-text-muted">{translations.category}</span>
+        <span class="font-medium">{post.data.category}</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-text-muted">{translations.published}</span>
+        <span class="font-medium">{formatDate(post.data.publishDate)}</span>
+      </div>
+    </div>
+  </div>
+)}

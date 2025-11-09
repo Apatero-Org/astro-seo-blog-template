@@ -1,0 +1,26 @@
+---
+export interface Props {
+  categories: any[];
+  categoryCounts: Record<string, number>;
+  translations: any;
+}
+
+const { categories, categoryCounts, translations } = Astro.props;
+---
+
+<div>
+  <h3 class="text-sm font-bold uppercase mb-4">{translations.categories}</h3>
+  <div class="flex flex-wrap gap-2">
+    {categories.map((category) => {
+      const count = categoryCounts[category.name] || 0;
+      return (
+        <a
+          href={`/blog/category/${category.slug}`}
+          class="px-3 py-1 bg-surface rounded-full text-sm hover:bg-border transition-colors"
+        >
+          {category.name} ({count})
+        </a>
+      );
+    })}
+  </div>
+</div>

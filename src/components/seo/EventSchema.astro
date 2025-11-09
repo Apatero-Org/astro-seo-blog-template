@@ -1,0 +1,100 @@
+---
+import { SITE_CONFIG } from '../../data/site-config';
+
+export interface Props {
+  name: string;
+  description: string;
+  startDate: string; // ISO 8601 format: 2025-12-31T20:00:00-05:00
+  endDate?: string;
+  location?: {
+    name: string;
+    address?: string;
+  };
+  isOnline?: boolean;
+  onlineUrl?: string;
+  image?: string;
+  organizer?: {
+    name: string;
+    url?: string;
+  };
+  offers?: {
+    price: string;
+    priceCurrency: string;
+    availability: 'InStock' | 'SoldOut' | 'PreOrder';
+    url?: string;
+  };
+}
+
+const {
+  name,
+  description,
+  startDate,
+  endDate,
+  location,
+  isOnline = false,
+  onlineUrl,
+  image,
+  organizer,
+  offers,
+} = Astro.props;
+
+const eventSchema: any = {
+  "@context": "https://schema.org",
+  "@type": "Event",
+  "name": name,
+  "description": description,
+  "startDate": startDate,
+  ...(endDate && { "endDate": endDate }),
+  ...(image && {
+    "image": image.startsWith('http') ? image : `${SITE_CONFIG.url}${image}`
+  }),
+  "eventAttendanceMode": isOnline
+    ? "https://schema.org/OnlineEventAttendanceMode"
+    : "https://schema.org/OfflineEventAttendanceMode",
+  "eventStatus": "https://schema.org/EventScheduled",
+};
+
+if (isOnline && onlineUrl) {
+  eventSchema.location = {
+    "@type": "VirtualLocation",
+    "url": onlineUrl
+  };
+} else if (location) {
+  eventSchema.location = {
+    "@type": "Place",
+    "name": location.name,
+    ...(location.address && {
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": location.address
+      }
+    })
+  };
+}
+
+if (organizer) {
+  eventSchema.organizer = {
+    "@type": "Organization",
+    "name": organizer.name,
+    ...(organizer.url && { "url": organizer.url })
+  };
+} else {
+  eventSchema.organizer = {
+    "@type": "Organization",
+    "name": SITE_CONFIG.title,
+    "url": SITE_CONFIG.url
+  };
+}
+
+if (offers) {
+  eventSchema.offers = {
+    "@type": "Offer",
+    "price": offers.price,
+    "priceCurrency": offers.priceCurrency,
+    "availability": `https://schema.org/${offers.availability}`,
+    ...(offers.url && { "url": offers.url })
+  };
+}
+---
+
+<script type="application/ld+json" set:html={JSON.stringify(eventSchema)} />

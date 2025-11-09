@@ -298,9 +298,13 @@ const authors = await getAuthors();
       
       if (url) {
         previewContainer.innerHTML = `
-          <img 
-            src="${url}" 
-            alt="Avatar preview" 
+          <img
+            src="${url}"
+            alt="Avatar preview"
+            width="96"
+            height="96"
+            loading="lazy"
+            decoding="async"
             class="w-24 h-24 rounded-full object-cover border-2 border-border"
           />
         `;

@@ -78,16 +78,51 @@ const isBlogPage = Astro.url.pathname.includes('/blog') || Astro.url.pathname.st
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+
+    <!-- Resource Hints for Performance - 2025 Best Practices -->
+    <!-- preconnect for critical third-parties (DNS + TCP + TLS) -->
+    <link rel="preconnect" href="https://www.google-analytics.com" crossorigin />
+    <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin />
+    <!-- dns-prefetch fallback for older browsers -->
+    <link rel="dns-prefetch" href="https://www.google-analytics.com" />
+    <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+
+    <!-- Preload Critical Fonts for FCP optimization -->
+    <link
+      rel="preload"
+      href="/_astro/inter-latin-400-normal.C38fXH4l.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/_astro/inter-latin-700-normal.CcwFXNfp.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+
+    <!-- Favicon -->
     <link rel="icon" type="image/png" sizes="32x32" href="/Favicon.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/Favicon.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/Favicon.png" />
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- RSS Feed -->
+    <link rel="alternate" type="application/rss+xml" title={`${SITE_CONFIG.title} RSS Feed`} href="/rss.xml" />
+
     <meta name="generator" content={Astro.generator} />
 
-    <!-- Google Analytics - Configure with your GA_MEASUREMENT_ID in site-config.json -->
+    <!-- Google Analytics with Partytown for better performance -->
     {GA_MEASUREMENT_ID && (
       <>
-        <script async src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}></script>
-        <script is:inline define:vars={{ GA_MEASUREMENT_ID }}>
+        <script type="text/partytown" async src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}></script>
+        <script type="text/partytown" define:vars={{ GA_MEASUREMENT_ID }}>
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());
@@ -95,15 +130,6 @@ const isBlogPage = Astro.url.pathname.includes('/blog') || Astro.url.pathname.st
         </script>
       </>
     )}
-
-    <!-- Google Fonts - non-render-blocking -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- Load fonts async to prevent render blocking -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'" />
-    <noscript>
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" />
-    </noscript>
 
     <SEOHead
       title={title}
@@ -144,13 +170,55 @@ const isBlogPage = Astro.url.pathname.includes('/blog') || Astro.url.pathname.st
         }
         return 'light';
       })();
-      
+
       if (theme === 'dark') {
         document.documentElement.classList.add('dark');
       }
     </script>
+
+    <!-- Service Worker & Web Vitals & LoAF Monitoring -->
+    <script>
+      import { registerServiceWorker, initWebVitals, initLoAFMonitoring } from '../lib/register-sw';
+      registerServiceWorker();
+      initWebVitals();
+      initLoAFMonitoring();
+    </script>
+
+    <!-- Speculation Rules API for Prefetching (Chrome 121+) -->
+    <script type="speculationrules">
+      {
+        "prerender": [
+          {
+            "where": {
+              "and": [
+                { "href_matches": "/*" },
+                { "not": { "href_matches": "/admin/*" } },
+                { "not": { "href_matches": "*.pdf" } }
+              ]
+            },
+            "eagerness": "moderate"
+          }
+        ],
+        "prefetch": [
+          {
+            "where": {
+              "and": [
+                { "href_matches": "/*" },
+                { "not": { "selector_matches": ".no-prefetch" } }
+              ]
+            },
+            "eagerness": "moderate"
+          }
+        ]
+      }
+    </script>
   </head>
-  <body>
+  <body role="document">
+    <!-- Skip to content link for accessibility -->
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-text focus:text-background focus:rounded">
+      Skip to content
+    </a>
+
     <!-- Floating Theme Toggle and Language Switcher -->
     {!hideThemeToggle && (
       <div class="fixed top-4 right-4 z-50 flex items-center gap-2">
@@ -225,11 +293,21 @@ const isBlogPage = Astro.url.pathname.includes('/blog') || Astro.url.pathname.st
         </svg>
       </button>
     )}
-    
+
     <div class="min-h-screen flex flex-col">
-      <main class="flex-grow">
+      <nav role="navigation" aria-label="Main navigation" class="sr-only">
+        <!-- Screen reader navigation -->
+        <ul>
+          <li><a href="/">Home</a></li>
+          <li><a href="/blog">Blog</a></li>
+          <li><a href="#main-content">Skip to content</a></li>
+        </ul>
+      </nav>
+
+      <main id="main-content" role="main" aria-label="Main content" class="flex-grow">
         <slot />
       </main>
+
       <Footer siteName={siteName} />
     </div>
     

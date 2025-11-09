@@ -1,0 +1,42 @@
+---
+export interface Props {
+  authorInfo: any;
+  translations: any;
+}
+
+const { authorInfo, translations } = Astro.props;
+---
+
+{authorInfo && (
+  <div class="border-t pt-8">
+    <h3 class="text-sm font-bold uppercase mb-4">{translations.aboutTheAuthor}</h3>
+    <a href={`/author/${authorInfo.id}`} class="block group hover:bg-surface transition-colors rounded-lg p-2 -m-2">
+      <div class="flex items-center gap-3 mb-3">
+        {authorInfo.avatar ? (
+          <img
+            src={authorInfo.avatar}
+            alt={authorInfo.name}
+            width="48"
+            height="48"
+            loading="lazy"
+            decoding="async"
+            class="w-12 h-12 rounded-full object-cover flex-shrink-0"
+          />
+        ) : (
+          <div class="w-12 h-12 rounded-full bg-text text-background flex items-center justify-center font-bold flex-shrink-0">
+            {authorInfo.name.split(' ').map(name => name.charAt(0)).join('').slice(0, 2).toUpperCase()}
+          </div>
+        )}
+        <div class="min-w-0">
+          <h4 class="font-semibold text-sm group-hover:opacity-70 transition-opacity">{authorInfo.name}</h4>
+        </div>
+      </div>
+
+      {authorInfo.bio && (
+        <p class="text-xs text-text-muted mb-3 line-clamp-3">
+          {authorInfo.bio}
+        </p>
+      )}
+    </a>
+  </div>
+)}

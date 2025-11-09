@@ -69,8 +69,11 @@ try {
                       src={imageUrl}
                       alt={metadata.images[image]?.alt || image}
                       title={metadata.images[image]?.title || ''}
-                      class="w-full h-full object-cover"
+                      width="300"
+                      height="300"
                       loading="lazy"
+                      decoding="async"
+                      class="w-full h-full object-cover"
                     />
                   </div>
                   <div class="p-3 space-y-2">

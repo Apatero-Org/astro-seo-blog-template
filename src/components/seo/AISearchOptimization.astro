@@ -1,0 +1,76 @@
+---
+/**
+ * AI Search Optimization Component (2025)
+ *
+ * Optimizes content for AI-powered search engines:
+ * - Google AI Overviews
+ * - ChatGPT Search
+ * - Perplexity
+ * - Bing Copilot
+ *
+ * Features:
+ * - Entity clustering for better semantic understanding
+ * - Enriched FAQ content for voice/AI responses
+ * - Structured summaries for LLM consumption
+ */
+
+import { SITE_CONFIG } from '../../data/site-config';
+
+export interface Props {
+  title: string;
+  category?: string;
+  tags?: string[];
+  summary?: string;
+  relatedEntities?: string[]; // Related topics for entity clustering
+}
+
+const {
+  title,
+  category,
+  tags = [],
+  summary,
+  relatedEntities = [],
+} = Astro.props;
+
+// Build entity clustering for AI understanding
+const entities = [
+  ...(category ? [category] : []),
+  ...tags,
+  ...relatedEntities,
+].map(entity => ({
+  "@type": "Thing",
+  "name": entity,
+  "sameAs": `${SITE_CONFIG.url}/blog/tag/${entity.toLowerCase().replace(/\s+/g, '-')}`
+}));
+
+// AI-optimized summary schema
+const aiOptimizedSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": title,
+  "about": entities,
+  ...(summary && {
+    "abstract": summary,
+    "description": summary
+  }),
+  "inLanguage": "en-US",
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": SITE_CONFIG.title,
+    "url": SITE_CONFIG.url
+  }
+};
+---
+
+<!-- AI Search Optimization Schema -->
+<script type="application/ld+json" set:html={JSON.stringify(aiOptimizedSchema)} />
+
+<!-- Entity Clustering Meta Tags for AI -->
+{entities.length > 0 && (
+  <meta name="keywords" content={entities.map(e => e.name).join(', ')} />
+)}
+
+<!-- Summary for AI extraction -->
+{summary && (
+  <meta name="description" content={summary} />
+)}

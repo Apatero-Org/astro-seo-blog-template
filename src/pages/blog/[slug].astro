@@ -1,5 +1,7 @@
 ---
+import { Image } from 'astro:assets';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import BreadcrumbSchema from '../../components/seo/BreadcrumbSchema.astro';
 import { formatDate, calculateReadingTime, extractHeadings, extractFAQ, extractReviews, slugify } from '../../lib/utils';
 import PostCard from '../../components/blog/PostCard.astro';
 import BlogCTA from '../../components/blog/BlogCTA.astro';
@@ -140,10 +142,19 @@ const articleData = {
   faq={faqItems.length > 0 ? faqItems : undefined}
   reviews={reviewItems.length > 0 ? reviewItems : undefined}
 >
+  <!-- Breadcrumb Schema for SEO -->
+  <BreadcrumbSchema
+    items={[
+      { name: 'Blog', url: '/blog' },
+      { name: post.data.category, url: `/blog/category/${post.data.category.toLowerCase()}` },
+      { name: post.data.title, url: `/blog/${post.slug}` }
+    ]}
+  />
+
   <div class="container py-12">
     <div class="grid lg:grid-cols-[1fr,320px] gap-12">
       <!-- Main Content -->
-      <article class="max-w-none">
+      <article class="max-w-none" itemscope itemtype="https://schema.org/BlogPosting">
     <!-- Breadcrumb -->
     <div class="flex items-center gap-3 mb-6">
       <a href="/blog" class="text-text-muted hover:text-text transition-colors">
@@ -171,14 +182,18 @@ const articleData = {
         <span>•</span>
         <span>{readingTime} min read</span>
       </div>
-      
-      <h1 class="text-4xl font-display font-bold mb-4 text-balance">
-        {post.data.title}
-      </h1>
-      
-      <p class="text-lg text-text-muted">
-        {post.data.description}
-      </p>
+
+      <!-- Speakable Schema Markup for Voice Search (Google Assistant) -->
+      <div itemProp="speakable" itemScope itemType="https://schema.org/SpeakableSpecification">
+        <meta itemProp="cssSelector" content="h1, .article-intro" />
+        <h1 class="text-4xl font-display font-bold mb-4 text-balance">
+          {post.data.title}
+        </h1>
+
+        <p class="text-lg text-text-muted article-intro">
+          {post.data.description}
+        </p>
+      </div>
     </header>
     
     {/* Hero Image */}
@@ -187,6 +202,11 @@ const articleData = {
         <img
           src={post.data.heroImage}
           alt={post.data.heroImageAlt || `${post.data.title} - Complete ${post.data.category} guide and tutorial`}
+          width="1200"
+          height="630"
+          loading="eager"
+          decoding="async"
+          fetchpriority="high"
           class="w-full h-auto"
         />
       </div>
@@ -257,8 +277,11 @@ const articleData = {
                     <img
                       src={relatedPost.data.heroImage}
                       alt={relatedPost.data.heroImageAlt || `${relatedPost.data.title} - Related ${relatedPost.data.category} tutorial`}
-                      class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      width="600"
+                      height="338"
                       loading="lazy"
+                      decoding="async"
+                      class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                   </div>
                 )}

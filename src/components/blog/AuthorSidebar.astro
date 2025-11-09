@@ -81,8 +81,11 @@ const globalCategoryCounts = allPosts.reduce((acc, post) => {
               <img
                 src={featuredPost.data.heroImage}
                 alt={featuredPost.data.heroImageAlt || featuredPost.data.title}
-                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                width="400"
+                height="225"
                 loading="lazy"
+                decoding="async"
+                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />
             </div>
           )}

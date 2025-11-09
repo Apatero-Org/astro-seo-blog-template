@@ -1,0 +1,24 @@
+---
+import { normalizeTagName } from '../../../lib/tags';
+
+export interface Props {
+  popularTags: [string, number][];
+  translations: any;
+}
+
+const { popularTags, translations } = Astro.props;
+---
+
+<div>
+  <h3 class="text-sm font-bold uppercase mb-4">{translations.popularTags}</h3>
+  <div class="flex flex-wrap gap-2">
+    {popularTags.map(([tag, count]) => (
+      <a
+        href={`/blog/tag/${normalizeTagName(tag)}`}
+        class="px-3 py-1 bg-surface rounded-full text-sm hover:bg-border transition-colors"
+      >
+        #{tag} ({count})
+      </a>
+    ))}
+  </div>
+</div>

@@ -185,9 +185,10 @@ try {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ 
-            imageName, 
-            metadata: metadata 
+          credentials: 'include',
+          body: JSON.stringify({
+            imageName,
+            metadata: metadata
           }),
         });
 
@@ -239,6 +240,7 @@ try {
           headers: {
             'Content-Type': 'application/json',
           },
+          credentials: 'include',
           body: JSON.stringify({ imageName }),
         });
 
@@ -295,7 +297,8 @@ try {
       try {
         const response = await fetch('/api/upload', {
           method: 'POST',
-          body: formData
+          body: formData,
+          credentials: 'include'
         });
 
         const result = await response.json();

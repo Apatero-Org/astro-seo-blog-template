@@ -60,7 +60,6 @@ A modern, feature-rich, and SEO-optimized blog template built with [Astro](https
 - **Featured Posts**: Mark posts as featured for homepage display
 
 ### Developer Features
-- **Pre-commit Hooks**: Automatic code formatting and linting before commits
 - **TypeScript**: Full TypeScript support for type safety
 - **Hot Module Replacement**: Instant updates during development
 - **Server-Side Rendering**: Built with Node.js adapter for dynamic features
@@ -188,7 +187,6 @@ The admin CMS is protected by secure session-based authentication:
 │   │   └── i18n.ts           # Internationalization
 │   └── data/
 │       └── site-config.ts     # Site configuration
-├── .husky/                     # Pre-commit hooks
 ├── astro.config.mjs           # Astro configuration
 ├── tailwind.config.mjs        # Tailwind CSS configuration
 └── package.json

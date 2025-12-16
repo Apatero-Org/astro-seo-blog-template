@@ -3,6 +3,7 @@ import { ViewTransitions } from 'astro:transitions';
 import { SITE_CONFIG } from '../data/site-config';
 import SEOHead from '../components/seo/SEOHead.astro';
 import ThemeToggle from '../components/common/ThemeToggle.astro';
+import { isValidSession } from '../lib/session';
 import '../assets/styles/global.css';
 
 export interface Props {
@@ -14,7 +15,7 @@ const { title = 'Admin Dashboard', activeNav = 'dashboard' } = Astro.props;
 
 // Check authentication
 const sessionToken = Astro.cookies.get('admin-session');
-if (sessionToken?.value !== 'authenticated') {
+if (!isValidSession(sessionToken?.value)) {
   return Astro.redirect('/admin/login');
 }
 

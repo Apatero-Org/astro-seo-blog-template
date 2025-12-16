@@ -9,7 +9,7 @@ import ReadingProgress from '../../components/blog/ReadingProgress.astro';
 import SocialShare from '../../components/blog/SocialShare.astro';
 import { SITE_CONFIG } from '../../data/site-config';
 import { getBlogPost, getPublishedBlogPosts, getAllBlogPosts, getAvailableLanguagesForPost } from '../../lib/posts';
-import { normalizeTagName } from '../../lib/tags';
+import { normalizeTagName } from '../../lib/utils';
 import { DEFAULT_LANGUAGE } from '../../config/languages';
 import { marked } from 'marked';
 import fs from 'fs/promises';

@@ -1,11 +1,12 @@
 import type { APIRoute } from 'astro';
 import fs from 'fs/promises';
 import path from 'path';
+import { isValidSession } from '../../../lib/session';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   // Check authentication
   const sessionToken = cookies.get('admin-session');
-  if (sessionToken?.value !== 'authenticated') {
+  if (!isValidSession(sessionToken?.value)) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
       headers: { 'Content-Type': 'application/json' }

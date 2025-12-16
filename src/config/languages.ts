@@ -151,3 +151,25 @@ export function getAlternateLanguageUrls(slug: string, baseUrl: string): Record<
 
   return alternates;
 }
+
+/**
+ * Get Open Graph locale for a given language code
+ * Maps ISO 639-1 codes to full locale codes (e.g., en -> en_US)
+ */
+export function getOGLocale(lang: string): string {
+  const localeMap: Record<string, string> = {
+    en: 'en_US',
+    es: 'es_ES',
+    fr: 'fr_FR',
+    de: 'de_DE',
+    ja: 'ja_JP',
+    ko: 'ko_KR',
+    zh: 'zh_CN',
+    pt: 'pt_BR',
+    he: 'he_IL',
+    hi: 'hi_IN',
+    id: 'id_ID',
+    vi: 'vi_VN',
+  };
+  return localeMap[lang] || lang;
+}

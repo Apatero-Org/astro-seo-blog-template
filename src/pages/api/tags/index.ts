@@ -1,9 +1,18 @@
 import type { APIRoute } from 'astro';
-import { getCollection } from 'astro:content';
 import fs from 'fs/promises';
 import path from 'path';
+import { isValidSession } from '../../../lib/session';
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, cookies }) => {
+  // Check authentication
+  const sessionToken = cookies.get('admin-session');
+  if (!isValidSession(sessionToken?.value)) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
   try {
     const { name } = await request.json();
     
@@ -19,7 +28,7 @@ export const POST: APIRoute = async ({ request }) => {
     const tagsData = JSON.parse(await fs.readFile(tagsFilePath, 'utf-8'));
     
     // Check if tag already exists
-    const existingTag = tagsData.tags.find((t: any) => 
+    const existingTag = tagsData.tags.find((t: { name: string }) =>
       t.name.toLowerCase() === name.toLowerCase()
     );
     
@@ -60,10 +69,19 @@ export const POST: APIRoute = async ({ request }) => {
   }
 };
 
-export const DELETE: APIRoute = async ({ request }) => {
+export const DELETE: APIRoute = async ({ request, cookies }) => {
+  // Check authentication
+  const sessionToken = cookies.get('admin-session');
+  if (!isValidSession(sessionToken?.value)) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
   try {
     const { id } = await request.json();
-    
+
     if (!id || typeof id !== 'string') {
       return new Response(JSON.stringify({ error: 'Tag ID is required' }), {
         status: 400,
@@ -74,9 +92,9 @@ export const DELETE: APIRoute = async ({ request }) => {
     // Read tags from JSON file
     const tagsFilePath = path.join(process.cwd(), 'public', 'data', 'tags', 'tags.json');
     const tagsData = JSON.parse(await fs.readFile(tagsFilePath, 'utf-8'));
-    
+
     // Find the tag to delete
-    const tagToDelete = tagsData.tags.find((t: any) => t.id === id);
+    const tagToDelete = tagsData.tags.find((t: { id: string }) => t.id === id);
     if (!tagToDelete) {
       return new Response(JSON.stringify({ error: 'Tag not found' }), {
         status: 404,
@@ -84,33 +102,13 @@ export const DELETE: APIRoute = async ({ request }) => {
       });
     }
 
-    // Check if tag is in use
-    const allPosts = await getCollection('blog');
-    let postsUsingTag = 0;
-    
-    for (const post of allPosts) {
-      const tags = post.data.tags || [];
-      if (tags.includes(tagToDelete.name)) {
-        postsUsingTag++;
-      }
-    }
-
-    if (postsUsingTag > 0) {
-      return new Response(JSON.stringify({ 
-        error: `Cannot delete tag "${tagToDelete.name}" because it is used in ${postsUsingTag} post(s)` 
-      }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-
     // Remove tag from JSON file
-    tagsData.tags = tagsData.tags.filter((t: any) => t.id !== id);
+    tagsData.tags = tagsData.tags.filter((t: { id: string }) => t.id !== id);
     await fs.writeFile(tagsFilePath, JSON.stringify(tagsData, null, 2));
 
-    return new Response(JSON.stringify({ 
-      success: true, 
-      message: 'Tag deleted successfully' 
+    return new Response(JSON.stringify({
+      success: true,
+      message: 'Tag deleted successfully'
     }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }

@@ -34,13 +34,11 @@ export default defineConfig({
       include: [
         'lodash.debounce',
         'direction',
-        '@emotion/weak-memoize'
       ],
     },
     ssr: {
       noExternal: [
         'direction',
-        '@emotion/weak-memoize',
         'lodash'
       ],
     },

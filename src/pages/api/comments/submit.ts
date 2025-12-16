@@ -37,7 +37,7 @@ export const POST: APIRoute = async ({ request }) => {
     }
     
     // Generate unique ID
-    const id = `comment-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const id = `comment-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
     
     // Create comment object
     const comment = {

@@ -1,4 +1,12 @@
 ---
+import { removeSession } from '../../lib/session';
+
+// Remove session from valid sessions set
+const sessionToken = Astro.cookies.get('admin-session');
+if (sessionToken?.value) {
+  removeSession(sessionToken.value);
+}
+
 // Clear the session cookie
 Astro.cookies.delete('admin-session', {
   path: '/'

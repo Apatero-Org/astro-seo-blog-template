@@ -1,13 +1,39 @@
 import type { APIRoute } from 'astro';
 import fs from 'fs/promises';
 import path from 'path';
+import { isValidSession } from '../../../lib/session';
 
-export const POST: APIRoute = async ({ request }) => {
+/**
+ * Validates that a slug contains only safe characters
+ * Prevents path traversal attacks
+ */
+function isValidSlug(slug: string): boolean {
+  return /^[a-zA-Z0-9_-]+$/.test(slug) && slug.length > 0 && slug.length < 200;
+}
+
+export const POST: APIRoute = async ({ request, cookies }) => {
+  // Check authentication
+  const sessionToken = cookies.get('admin-session');
+  if (!isValidSession(sessionToken?.value)) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
   try {
     const { slug } = await request.json();
-    
+
     if (!slug) {
       return new Response(JSON.stringify({ error: 'Slug is required' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Validate slug to prevent path traversal
+    if (!isValidSlug(slug)) {
+      return new Response(JSON.stringify({ error: 'Invalid slug format' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' }
       });

@@ -1,11 +1,20 @@
 import type { APIRoute } from 'astro';
 import fs from 'fs/promises';
 import path from 'path';
+import { isValidSession } from '../../lib/session';
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, cookies }) => {
+  // Check authentication
+  const sessionToken = cookies.get('admin-session');
+  if (!isValidSession(sessionToken?.value)) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
   try {
     const settings = await request.json();
-    console.log('Received settings:', settings);
     
     // Update site-config.json
     const configPath = path.join(process.cwd(), 'public/data/settings/site-config.json');
@@ -55,7 +64,6 @@ export const POST: APIRoute = async ({ request }) => {
     
     // Save updated config
     await fs.writeFile(configPath, JSON.stringify(updatedConfig, null, 2));
-    console.log('Site config updated successfully');
     
     // Update SEO settings JSON
     const seoSettingsPath = path.join(process.cwd(), 'public/data/settings/seo-settings.json');
@@ -75,7 +83,6 @@ export const POST: APIRoute = async ({ request }) => {
     };
     
     await fs.writeFile(seoSettingsPath, JSON.stringify(seoSettings, null, 2));
-    console.log('SEO settings updated successfully');
     
     // Also update the src/data/site-config.ts to trigger rebuild
     const srcConfigPath = path.join(process.cwd(), 'src/data/site-config.ts');

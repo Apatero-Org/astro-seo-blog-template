@@ -29,6 +29,11 @@ export function slugify(text: string): string {
     .trim();
 }
 
+/**
+ * Normalize tag names for URLs (alias for slugify)
+ */
+export const normalizeTagName = slugify;
+
 export function sortPostsByDate<T extends { data: { publishDate: Date } }>(
   posts: T[]
 ): T[] {
@@ -110,78 +115,65 @@ export interface ReviewItem {
   reviewBody?: string;
 }
 
-export function extractReviews(markdown: string): ReviewItem[] {
-  const reviewItems: ReviewItem[] = [];
+/**
+ * Parse table cells from a markdown table row
+ */
+function parseTableCells(row: string): string[] {
+  return row.split('|').map(cell => cell.trim()).filter(Boolean);
+}
 
-  // Look for comparison tables with "Overall Quality Score" rows
-  // Pattern: | Overall Quality Score | 8.2/10 | 9.1/10 | 8.0/10 | ...
-  const overallScoreRegex = /\|\s*Overall Quality Score\s*\|(.*?)\|/i;
-  const match = markdown.match(overallScoreRegex);
+/**
+ * Find the table header row before a given position in markdown
+ */
+function findTableHeader(markdown: string, beforeIndex: number): string | null {
+  const lines = markdown.substring(0, beforeIndex).split('\n');
 
-  if (!match) {
-    return reviewItems;
-  }
-
-  // Extract the row content with ratings
-  const ratingsRow = match[1];
-
-  // Find the table header to get product names
-  // Look backwards from the Overall Quality Score row to find the header
-  const textBeforeRatings = markdown.substring(0, match.index!);
-  const tableLines = textBeforeRatings.split('\n');
-
-  // Find the header row (should be a few lines before)
-  let headerRow = '';
-  for (let i = tableLines.length - 1; i >= Math.max(0, tableLines.length - 10); i--) {
-    const line = tableLines[i];
-    // Header row typically has | Metric | Product1 | Product2 | Product3 | ...
+  for (let i = lines.length - 1; i >= Math.max(0, lines.length - 10); i--) {
+    const line = lines[i];
     if (line.includes('|') && !line.includes('---') && !line.includes('Overall Quality Score')) {
-      headerRow = line;
-      break;
+      return line;
     }
   }
+  return null;
+}
 
-  if (!headerRow) {
-    return reviewItems;
-  }
+/**
+ * Extract review items from markdown comparison tables
+ * Looks for tables with "Overall Quality Score" rows containing X/10 ratings
+ */
+export function extractReviews(markdown: string): ReviewItem[] {
+  const scoreMatch = markdown.match(/\|\s*Overall Quality Score\s*\|(.*?)\|/i);
+  if (!scoreMatch) return [];
 
-  // Extract product names from header (skip first column which is "Metric" or similar)
-  const headerParts = headerRow.split('|').map(part => part.trim()).filter(part => part);
-  const productNames = headerParts.slice(1); // Skip first column
+  const headerRow = findTableHeader(markdown, scoreMatch.index!);
+  if (!headerRow) return [];
 
-  // Extract ratings from the ratings row
-  const ratingParts = ratingsRow.split('|').map(part => part.trim()).filter(part => part);
+  const productNames = parseTableCells(headerRow).slice(1); // Skip metric column
+  const ratings = parseTableCells(scoreMatch[1]);
+  const ratingPattern = /([\d.]+)\/(\d+)/;
 
-  // Match ratings with product names
-  for (let i = 0; i < Math.min(productNames.length, ratingParts.length); i++) {
-    const ratingText = ratingParts[i];
-    const productName = productNames[i];
+  return ratings.reduce<ReviewItem[]>((items, ratingText, index) => {
+    const productName = productNames[index];
+    const match = ratingText.match(ratingPattern);
 
-    // Skip non-rating columns (like "Test Method" or "Notes")
-    // Extract rating in format X/10 or X.X/10
-    const ratingMatch = ratingText.match(/([\d.]+)\/(\d+)/);
-
-    if (ratingMatch && productName) {
-      const ratingValue = parseFloat(ratingMatch[1]);
-      const bestRating = parseInt(ratingMatch[2]);
-
-      // Look for review body text mentioning this product
-      let reviewBody = '';
-      const productMentionRegex = new RegExp(`\\*\\*${productName}[^*]*\\*\\*[^.]*\\.`, 'i');
-      const bodyMatch = markdown.match(productMentionRegex);
-      if (bodyMatch) {
-        reviewBody = bodyMatch[0].replace(/\*\*/g, '').trim();
-      }
-
-      reviewItems.push({
+    if (match && productName) {
+      items.push({
         itemName: productName,
-        ratingValue,
-        bestRating,
+        ratingValue: parseFloat(match[1]),
+        bestRating: parseInt(match[2]),
         worstRating: 1,
-        reviewBody
+        reviewBody: extractProductMention(markdown, productName)
       });
     }
-  }
+    return items;
+  }, []);
+}
 
-  return reviewItems;
+/**
+ * Extract a product mention as review body text
+ */
+function extractProductMention(markdown: string, productName: string): string {
+  const pattern = new RegExp(`\\*\\*${productName}[^*]*\\*\\*[^.]*\\.`, 'i');
+  const match = markdown.match(pattern);
+  return match ? match[0].replace(/\*\*/g, '').trim() : '';
 }

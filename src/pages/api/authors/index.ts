@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { getAuthors, saveAuthors } from '../../../lib/authors';
+import { isValidSession } from '../../../lib/session';
 
 export const GET: APIRoute = async () => {
   try {
@@ -16,7 +17,16 @@ export const GET: APIRoute = async () => {
   }
 };
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, cookies }) => {
+  // Check authentication
+  const sessionToken = cookies.get('admin-session');
+  if (!isValidSession(sessionToken?.value)) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
   try {
     const author = await request.json();
     const authors = await getAuthors();
@@ -44,7 +54,16 @@ export const POST: APIRoute = async ({ request }) => {
   }
 };
 
-export const PUT: APIRoute = async ({ request }) => {
+export const PUT: APIRoute = async ({ request, cookies }) => {
+  // Check authentication
+  const sessionToken = cookies.get('admin-session');
+  if (!isValidSession(sessionToken?.value)) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
   try {
     const updatedAuthor = await request.json();
     const authors = await getAuthors();
@@ -72,7 +91,16 @@ export const PUT: APIRoute = async ({ request }) => {
   }
 };
 
-export const DELETE: APIRoute = async ({ request }) => {
+export const DELETE: APIRoute = async ({ request, cookies }) => {
+  // Check authentication
+  const sessionToken = cookies.get('admin-session');
+  if (!isValidSession(sessionToken?.value)) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
   try {
     const { id } = await request.json();
     const authors = await getAuthors();

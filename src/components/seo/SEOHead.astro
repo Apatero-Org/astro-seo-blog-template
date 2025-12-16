@@ -1,6 +1,6 @@
 ---
 import { SITE_CONFIG } from '../../data/site-config';
-import { DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES, getLanguagePrefix } from '../../config/languages';
+import { DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES, getLanguagePrefix, getOGLocale } from '../../config/languages';
 
 export interface Props {
   title: string;
@@ -148,15 +148,14 @@ if (shouldGenerateHreflang) {
 <meta property="og:description" content={description} />
 <meta property="og:image" content={ogImageURL} />
 <meta property="og:site_name" content={SITE_CONFIG.title} />
-<meta property="og:locale" content={currentLanguage === 'en' ? 'en_US' : currentLanguage === 'es' ? 'es_ES' : currentLanguage === 'fr' ? 'fr_FR' : currentLanguage === 'de' ? 'de_DE' : currentLanguage === 'ja' ? 'ja_JP' : currentLanguage === 'ko' ? 'ko_KR' : currentLanguage === 'zh' ? 'zh_CN' : SITE_CONFIG.locale} />
+<meta property="og:locale" content={getOGLocale(currentLanguage)} />
 
 <!-- Alternate locales for Open Graph -->
 {availableLanguages.length > 0 && availableLanguages
   .filter(lang => lang !== currentLanguage)
-  .map(lang => {
-    const locale = lang === 'en' ? 'en_US' : lang === 'es' ? 'es_ES' : lang === 'fr' ? 'fr_FR' : lang === 'de' ? 'de_DE' : lang === 'ja' ? 'ja_JP' : lang === 'ko' ? 'ko_KR' : lang === 'zh' ? 'zh_CN' : lang;
-    return <meta property="og:locale:alternate" content={locale} />;
-  })
+  .map(lang => (
+    <meta property="og:locale:alternate" content={getOGLocale(lang)} />
+  ))
 }
 
 <!-- Twitter -->

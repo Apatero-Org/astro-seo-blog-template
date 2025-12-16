@@ -25,3 +25,7 @@ pnpm-debug.log*
 
 # deployment configs with sensitive data
 .do/app.yaml
+
+# Environment variables
+.env
+.env.*

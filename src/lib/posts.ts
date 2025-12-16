@@ -3,33 +3,77 @@ import path from 'path';
 import matter from 'gray-matter';
 import { DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES } from '../config/languages';
 
+export interface BlogPostData {
+  title: string;
+  description: string;
+  publishDate: Date;
+  updateDate?: Date;
+  author: string;
+  category: string;
+  tags: string[];
+  featured: boolean;
+  draft: boolean;
+  heroImage?: string;
+  heroImageAlt?: string;
+  seoTitle?: string;
+  seoDescription?: string;
+  seoKeywords?: string;
+  noindex?: boolean;
+  nofollow?: boolean;
+  canonicalUrl?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImage?: string;
+}
+
 export interface BlogPost {
   id: string;
   slug: string;
   body: string;
   collection: string;
-  language: string; // ISO 639-1 language code
-  data: {
-    title: string;
-    description: string;
-    publishDate: Date;
-    updateDate?: Date;
-    author: string;
-    category: string;
-    tags: string[];
-    featured: boolean;
-    draft: boolean;
-    heroImage?: string;
-    heroImageAlt?: string;
-    seoTitle?: string;
-    seoDescription?: string;
-    seoKeywords?: string;
-    noindex?: boolean;
-    nofollow?: boolean;
-    canonicalUrl?: string;
-    ogTitle?: string;
-    ogDescription?: string;
-    ogImage?: string;
+  language: string;
+  data: BlogPostData;
+}
+
+/**
+ * Parse frontmatter data into BlogPostData structure
+ */
+function parseFrontmatter(data: Record<string, unknown>): BlogPostData {
+  return {
+    title: String(data.title || ''),
+    description: String(data.description || ''),
+    publishDate: new Date(data.publishDate as string || Date.now()),
+    updateDate: data.updateDate ? new Date(data.updateDate as string) : undefined,
+    author: String(data.author || 'default'),
+    category: String(data.category || 'Uncategorized'),
+    tags: Array.isArray(data.tags) ? data.tags : [],
+    featured: Boolean(data.featured),
+    draft: Boolean(data.draft),
+    heroImage: data.heroImage as string | undefined,
+    heroImageAlt: data.heroImageAlt as string | undefined,
+    seoTitle: data.seoTitle as string | undefined,
+    seoDescription: data.seoDescription as string | undefined,
+    seoKeywords: data.seoKeywords as string | undefined,
+    noindex: data.noindex as boolean | undefined,
+    nofollow: data.nofollow as boolean | undefined,
+    canonicalUrl: data.canonicalUrl as string | undefined,
+    ogTitle: data.ogTitle as string | undefined,
+    ogDescription: data.ogDescription as string | undefined,
+    ogImage: data.ogImage as string | undefined,
+  };
+}
+
+/**
+ * Create a BlogPost object from parsed content
+ */
+function createBlogPost(slug: string, body: string, data: Record<string, unknown>, language: string): BlogPost {
+  return {
+    id: slug,
+    slug,
+    body,
+    collection: 'blog',
+    language,
+    data: parseFrontmatter(data),
   };
 }
 
@@ -60,38 +104,9 @@ export async function getAllBlogPosts(language: string = DEFAULT_LANGUAGE): Prom
 
         const content = await fs.readFile(filePath, 'utf-8');
         const { data, content: body } = matter(content);
-
         const slug = file.replace(/\.(mdx|md)$/, '');
 
-        posts.push({
-          id: slug,
-          slug,
-          body,
-          collection: 'blog',
-          language: DEFAULT_LANGUAGE,
-          data: {
-            title: data.title || '',
-            description: data.description || '',
-            publishDate: new Date(data.publishDate || Date.now()),
-            updateDate: data.updateDate ? new Date(data.updateDate) : undefined,
-            author: data.author || 'default',
-            category: data.category || 'Uncategorized',
-            tags: Array.isArray(data.tags) ? data.tags : [],
-            featured: data.featured || false,
-            draft: data.draft || false,
-            heroImage: data.heroImage,
-            heroImageAlt: data.heroImageAlt,
-            seoTitle: data.seoTitle,
-            seoDescription: data.seoDescription,
-            seoKeywords: data.seoKeywords,
-            noindex: data.noindex,
-            nofollow: data.nofollow,
-            canonicalUrl: data.canonicalUrl,
-            ogTitle: data.ogTitle,
-            ogDescription: data.ogDescription,
-            ogImage: data.ogImage,
-          }
-        });
+        posts.push(createBlogPost(slug, body, data, DEFAULT_LANGUAGE));
       }
     } else {
       // For other languages, read from language subdirectory
@@ -105,38 +120,9 @@ export async function getAllBlogPosts(language: string = DEFAULT_LANGUAGE): Prom
           const filePath = path.join(langDir, file);
           const content = await fs.readFile(filePath, 'utf-8');
           const { data, content: body } = matter(content);
-
           const slug = file.replace(/\.(mdx|md)$/, '');
 
-          posts.push({
-            id: slug,
-            slug,
-            body,
-            collection: 'blog',
-            language,
-            data: {
-              title: data.title || '',
-              description: data.description || '',
-              publishDate: new Date(data.publishDate || Date.now()),
-              updateDate: data.updateDate ? new Date(data.updateDate) : undefined,
-              author: data.author || 'default',
-              category: data.category || 'Uncategorized',
-              tags: Array.isArray(data.tags) ? data.tags : [],
-              featured: data.featured || false,
-              draft: data.draft || false,
-              heroImage: data.heroImage,
-              heroImageAlt: data.heroImageAlt,
-              seoTitle: data.seoTitle,
-              seoDescription: data.seoDescription,
-              seoKeywords: data.seoKeywords,
-              noindex: data.noindex,
-              nofollow: data.nofollow,
-              canonicalUrl: data.canonicalUrl,
-              ogTitle: data.ogTitle,
-              ogDescription: data.ogDescription,
-              ogImage: data.ogImage,
-            }
-          });
+          posts.push(createBlogPost(slug, body, data, language));
         }
       } catch (error) {
         // Language directory doesn't exist, that's ok
@@ -166,35 +152,7 @@ export async function getAllBlogPosts(language: string = DEFAULT_LANGUAGE): Prom
         const content = await fs.readFile(filePath, 'utf-8');
         const { data, content: body } = matter(content);
 
-        posts.push({
-          id: slug,
-          slug,
-          body,
-          collection: 'blog',
-          language: DEFAULT_LANGUAGE,
-          data: {
-            title: data.title || '',
-            description: data.description || '',
-            publishDate: new Date(data.publishDate || Date.now()),
-            updateDate: data.updateDate ? new Date(data.updateDate) : undefined,
-            author: data.author || 'default',
-            category: data.category || 'Uncategorized',
-            tags: Array.isArray(data.tags) ? data.tags : [],
-            featured: data.featured || false,
-            draft: data.draft || false,
-            heroImage: data.heroImage,
-            heroImageAlt: data.heroImageAlt,
-            seoTitle: data.seoTitle,
-            seoDescription: data.seoDescription,
-            seoKeywords: data.seoKeywords,
-            noindex: data.noindex,
-            nofollow: data.nofollow,
-            canonicalUrl: data.canonicalUrl,
-            ogTitle: data.ogTitle,
-            ogDescription: data.ogDescription,
-            ogImage: data.ogImage,
-          }
-        });
+        posts.push(createBlogPost(slug, body, data, DEFAULT_LANGUAGE));
       }
     } catch (error) {
       // Old directory doesn't exist or has issues, that's ok
@@ -234,35 +192,7 @@ export async function getBlogPost(slug: string, language: string = DEFAULT_LANGU
     const content = await fs.readFile(filePath, 'utf-8');
     const { data, content: body } = matter(content);
 
-    return {
-      id: slug,
-      slug,
-      body,
-      collection: 'blog',
-      language,
-      data: {
-        title: data.title || '',
-        description: data.description || '',
-        publishDate: new Date(data.publishDate || Date.now()),
-        updateDate: data.updateDate ? new Date(data.updateDate) : undefined,
-        author: data.author || 'default',
-        category: data.category || 'Uncategorized',
-        tags: Array.isArray(data.tags) ? data.tags : [],
-        featured: data.featured || false,
-        draft: data.draft || false,
-        heroImage: data.heroImage,
-        heroImageAlt: data.heroImageAlt,
-        seoTitle: data.seoTitle,
-        seoDescription: data.seoDescription,
-        seoKeywords: data.seoKeywords,
-        noindex: data.noindex,
-        nofollow: data.nofollow,
-        canonicalUrl: data.canonicalUrl,
-        ogTitle: data.ogTitle,
-        ogDescription: data.ogDescription,
-        ogImage: data.ogImage,
-      }
-    };
+    return createBlogPost(slug, body, data, language);
   } catch (error) {
     // File doesn't exist in new location
   }
@@ -275,35 +205,7 @@ export async function getBlogPost(slug: string, language: string = DEFAULT_LANGU
       const content = await fs.readFile(oldFilePath, 'utf-8');
       const { data, content: body } = matter(content);
 
-      return {
-        id: slug,
-        slug,
-        body,
-        collection: 'blog',
-        language: DEFAULT_LANGUAGE,
-        data: {
-          title: data.title || '',
-          description: data.description || '',
-          publishDate: new Date(data.publishDate || Date.now()),
-          updateDate: data.updateDate ? new Date(data.updateDate) : undefined,
-          author: data.author || 'default',
-          category: data.category || 'Uncategorized',
-          tags: Array.isArray(data.tags) ? data.tags : [],
-          featured: data.featured || false,
-          draft: data.draft || false,
-          heroImage: data.heroImage,
-          heroImageAlt: data.heroImageAlt,
-          seoTitle: data.seoTitle,
-          seoDescription: data.seoDescription,
-          seoKeywords: data.seoKeywords,
-          noindex: data.noindex,
-          nofollow: data.nofollow,
-          canonicalUrl: data.canonicalUrl,
-          ogTitle: data.ogTitle,
-          ogDescription: data.ogDescription,
-          ogImage: data.ogImage,
-        }
-      };
+      return createBlogPost(slug, body, data, DEFAULT_LANGUAGE);
     } catch (error) {
       // Post not found
     }

@@ -2,16 +2,16 @@
 
 A modern, feature-rich, and SEO-optimized blog template built with [Astro](https://astro.build). Perfect for developers, writers, and content creators who want a fast, scalable, and easily customizable blogging platform with a built-in CMS.
 
-## 🎯 Why Choose This Template?
+## Why Choose This Template?
 
 - **Zero Configuration** - Works out of the box with sensible defaults
 - **Built-in CMS** - No external CMS needed, manage everything from the dashboard
 - **File-Based** - No database required, all content stored as files
-- **Production Ready** - Pre-commit hooks, ENV authentication, and security best practices
+- **Production Ready** - Secure session management, ENV authentication, and security best practices
 - **100 Lighthouse Score** - Optimized for performance, SEO, accessibility, and best practices
 - **Fully Customizable** - Modern monochromatic design that's easy to brand
 
-## 📸 Screenshots
+## Screenshots
 
 ### Single Blog Page
 ![Single Blog Page](./public/Single%20Blog%20Page.png)
@@ -31,7 +31,7 @@ A modern, feature-rich, and SEO-optimized blog template built with [Astro](https
 ### Author Page
 ![Author Page](./public/Author%20Page.png)
 
-## ✨ Features
+## Features
 
 ### Core Features
 - **SEO Optimized**: Built-in SEO best practices with meta tags, Open Graph, Twitter Cards, and JSON-LD structured data
@@ -50,7 +50,7 @@ A modern, feature-rich, and SEO-optimized blog template built with [Astro](https
 
 ### Admin CMS Dashboard
 - **Custom Admin Panel**: Built-in CMS dashboard at `/admin`
-- **ENV Authentication**: Secure login with environment variable credentials (no database needed)
+- **Secure Authentication**: Cryptographically secure session tokens with ENV credentials
 - **Posts Management**: Create, edit, delete, and manage all blog posts
 - **Media Library**: Upload and manage images with metadata (alt text, captions, titles)
 - **Authors Management**: Add and manage multiple authors with profiles
@@ -67,6 +67,7 @@ A modern, feature-rich, and SEO-optimized blog template built with [Astro](https
 - **View Transitions**: Smooth page transitions with Astro's View Transitions API
 - **Image Optimization**: Automatic image optimization and lazy loading
 - **Code Syntax Highlighting**: Beautiful code blocks with syntax highlighting
+- **Externalized i18n**: Translations stored in JSON for easy editing
 
 ## Tech Stack
 
@@ -76,7 +77,7 @@ A modern, feature-rich, and SEO-optimized blog template built with [Astro](https
 - **Deployment**: Node.js standalone server
 - **TypeScript**: Full TypeScript support
 
-## 🚀 Quick Start
+## Quick Start
 
 1. **Clone the repository**
    ```bash
@@ -94,14 +95,11 @@ A modern, feature-rich, and SEO-optimized blog template built with [Astro](https
    Create a `.env` file in the root directory:
    ```env
    # Admin Authentication (Required for /admin access)
-   ADMIN_USERNAME=admin
-   ADMIN_PASSWORD=your-secure-password
-
-   # Site Configuration
-   PUBLIC_SITE_URL=http://localhost:4321
+   ADMIN_EMAIL=admin@yourdomain.com
+   ADMIN_PASS=your-secure-password
 
    # Analytics (Optional)
-   PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX
+   GA_MEASUREMENT_ID=G-XXXXXXXXXX
    ```
 
 4. **Configure your site**
@@ -111,9 +109,7 @@ A modern, feature-rich, and SEO-optimized blog template built with [Astro](https
    {
      "title": "Your Blog Title",
      "description": "Your blog description",
-     "url": "https://yourdomain.com",
-     "author": "Your Name",
-     "authorEmail": "your.email@example.com"
+     "url": "https://yourdomain.com"
    }
    ```
 
@@ -126,22 +122,23 @@ A modern, feature-rich, and SEO-optimized blog template built with [Astro](https
    - **Frontend**: `http://localhost:4321`
    - **Admin Dashboard**: `http://localhost:4321/admin` (use credentials from `.env`)
 
-## 🔐 Admin Dashboard Access
+## Admin Dashboard Access
 
-The admin CMS is protected by environment variable authentication:
+The admin CMS is protected by secure session-based authentication:
 
-1. Set `ADMIN_USERNAME` and `ADMIN_PASSWORD` in your `.env` file
+1. Set `ADMIN_EMAIL` and `ADMIN_PASS` in your `.env` file
 2. Navigate to `/admin` or `/admin/login`
-3. Enter your credentials
+3. Enter your email and password
 4. Manage posts, media, authors, categories, tags, and settings
 
-**Security Notes:**
-- Admin credentials are stored in environment variables (not in the database)
+**Security Features:**
+- Cryptographically secure session tokens (32 bytes of randomness)
 - Session-based authentication with HTTP-only cookies
-- All admin routes are protected and redirect to login if not authenticated
-- Pre-commit hooks ensure no sensitive data is committed
+- All admin routes protected with middleware
+- Automatic redirect to login for unauthenticated requests
+- File upload validation with size limits (10MB) and type restrictions
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 /
@@ -158,7 +155,8 @@ The admin CMS is protected by environment variable authentication:
 │   │   ├── settings/           # Site configuration JSON
 │   │   ├── authors/            # Author profiles
 │   │   ├── categories/         # Category definitions
-│   │   └── tags/              # Tag definitions
+│   │   ├── tags/              # Tag definitions
+│   │   └── i18n/              # UI translations (translations.json)
 │   ├── blog-images/            # Blog post images
 │   │   └── metadata/          # Image metadata (alt text, captions)
 │   └── Favicon.png            # Site favicon
@@ -181,6 +179,10 @@ The admin CMS is protected by environment variable authentication:
 │   │   ├── about.astro        # About page
 │   │   └── index.astro        # Landing page
 │   ├── lib/                   # Utility functions
+│   │   ├── session.ts         # Session management
+│   │   ├── posts.ts           # Post utilities
+│   │   ├── utils.ts           # Common utilities
+│   │   └── data.ts            # Data loading functions
 │   ├── config/                # Configuration files
 │   │   ├── languages.ts       # Language definitions
 │   │   └── i18n.ts           # Internationalization
@@ -192,7 +194,7 @@ The admin CMS is protected by environment variable authentication:
 └── package.json
 ```
 
-## ✍️ Creating Blog Posts
+## Creating Blog Posts
 
 ### Option 1: Using the Admin Dashboard (Recommended)
 
@@ -256,12 +258,17 @@ Create the same file structure in language subdirectories:
 Edit `public/data/settings/site-config.json`:
 
 - **Site Information**: Title, description, URL
-- **Author Information**: Name, email, avatar
-- **Navigation**: Custom navigation items
-- **Social Links**: Twitter, GitHub, LinkedIn, etc.
-- **Features**: Enable/disable dark mode, search, comments, RSS
-- **Analytics**: Add Google Analytics ID
-- **Blog CTA**: Configure call-to-action sections
+- **Social Links**: Twitter, GitHub, LinkedIn, Instagram, YouTube, Discord
+- **Blog CTA**: Configure call-to-action sections with stats
+- **Analytics**: Google Analytics ID
+
+### UI Translations
+
+Edit `public/data/i18n/translations.json` to customize UI text in all 12 supported languages. The file contains translations for:
+- Navigation elements
+- Blog page labels
+- CTA sections
+- Common UI text
 
 ### Astro Config
 
@@ -272,46 +279,18 @@ Edit `astro.config.mjs` for build and deployment settings:
 - Server configuration
 - Image optimization
 
-## 🛠️ Commands
+## Commands
 
 | Command | Action |
 | :------ | :----- |
-| `npm install` | Install dependencies and set up pre-commit hooks |
+| `npm install` | Install dependencies |
 | `npm run dev` | Start dev server at `localhost:4321` |
 | `npm run build` | Build production site to `./dist/` |
 | `npm run preview` | Preview production build locally |
 | `npm run start` | Start production server |
 | `npm run astro ...` | Run Astro CLI commands |
-| `npm run format` | Format code with Prettier |
-| `npm run lint` | Lint code with ESLint |
 
-## 🔒 Pre-commit Hooks
-
-This template includes pre-commit hooks powered by [Husky](https://typicode.github.io/husky/) to ensure code quality:
-
-### Automatic Actions on Commit
-- **Code Formatting**: Automatically formats staged files with Prettier
-- **Linting**: Runs ESLint to catch errors
-- **Type Checking**: Validates TypeScript types
-- **Security**: Prevents committing sensitive data (`.env` files, secrets)
-
-### Setup
-Pre-commit hooks are automatically installed when you run `npm install`. If you need to reinstall them:
-
-```bash
-npm run prepare
-```
-
-### Bypassing Hooks (Not Recommended)
-In rare cases where you need to bypass hooks:
-
-```bash
-git commit --no-verify -m "Your commit message"
-```
-
-**Note**: This should only be used in exceptional circumstances.
-
-## 🚀 Deployment
+## Deployment
 
 This template uses the Node.js adapter for server-side rendering. Deploy to any platform that supports Node.js:
 
@@ -344,49 +323,38 @@ npm run start
 
 ```env
 # Admin Authentication (REQUIRED)
-ADMIN_USERNAME=your-admin-username
-ADMIN_PASSWORD=your-secure-password
-
-# Site Configuration (REQUIRED)
-PUBLIC_SITE_URL=https://yourdomain.com
+ADMIN_EMAIL=admin@yourdomain.com
+ADMIN_PASS=your-secure-password
 
 # Analytics (Optional)
-PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX
+GA_MEASUREMENT_ID=G-XXXXXXXXXX
 
 # Node Environment
 NODE_ENV=production
 ```
 
 **Security Checklist:**
-- ✅ Change default admin credentials
-- ✅ Use strong passwords (16+ characters)
-- ✅ Set `PUBLIC_SITE_URL` to your actual domain
-- ✅ Enable HTTPS on your hosting platform
-- ✅ Never commit `.env` files to version control
-- ✅ Use different credentials for staging and production
+- Change default admin credentials
+- Use strong passwords (16+ characters recommended)
+- Enable HTTPS on your hosting platform
+- Never commit `.env` files to version control
 
-## Customization
+## Multi-language Support
 
-### Styling
+This template supports **12 languages** out of the box with automatic routing and language switching:
 
-This template uses Tailwind CSS. Customize your theme in `tailwind.config.mjs`:
-
-- Colors
-- Fonts
-- Spacing
-- Breakpoints
-
-### Components
-
-All components are in `src/components/`. Customize or create new ones to match your design.
-
-### Layouts
-
-Page layouts are in `src/layouts/`. Modify the base layout to change the overall structure.
-
-## 🌍 Multi-language Support
-
-This template supports **all major languages** out of the box with automatic routing and language switching. The i18n system is fully extensible and ready for any language you need.
+- English (default)
+- Spanish (es)
+- French (fr)
+- German (de)
+- Japanese (ja)
+- Korean (ko)
+- Chinese (zh)
+- Portuguese (pt)
+- Hebrew (he)
+- Hindi (hi)
+- Indonesian (id)
+- Vietnamese (vi)
 
 ### Adding Translations
 
@@ -408,26 +376,13 @@ This template supports **all major languages** out of the box with automatic rou
    - German: `/de/blog/your-post`
 
 3. **Language switcher:**
-   Automatically appears in the header when translations are available for the current post.
+   Automatically appears in the header when translations are available.
 
 ### Adding New Languages
 
-Edit `src/config/languages.ts` to add more languages:
+Edit `src/config/languages.ts` to add language definitions, and add translations to `public/data/i18n/translations.json`.
 
-```typescript
-export const LANGUAGES: Record<string, Language> = {
-  // ... existing languages
-  it: {
-    code: 'it',
-    name: 'Italian',
-    nativeName: 'Italiano',
-    flag: '🇮🇹',
-    dir: 'ltr',
-  },
-};
-```
-
-## ⚡ Performance
+## Performance
 
 This template is built for speed and achieves exceptional performance scores:
 
@@ -444,19 +399,80 @@ This template is built for speed and achieves exceptional performance scores:
 - **Code Splitting**: Automatic code splitting per route
 - **Minimal JavaScript**: Ships minimal JS to the browser
 - **Critical CSS**: Inlines critical CSS for faster rendering
-- **Font Optimization**: Preconnect to Google Fonts, async loading
-- **Prefetching**: Intelligent link prefetching for instant navigation
 
 ### Load Times
 - **First Contentful Paint (FCP)**: <0.5s
 - **Largest Contentful Paint (LCP)**: <1.0s
 - **Time to Interactive (TTI)**: <1.5s
-- **Total Blocking Time (TBT)**: <100ms
 
-## 📚 FAQ
+---
+
+## Premium Version (Coming Soon)
+
+We're developing a **Premium version** of this template with advanced AI-powered features for professional content creators and businesses.
+
+### Premium Features
+
+#### Multiple Theme Variants
+- **5+ Professional Themes**: Choose from modern, minimal, magazine, corporate, and creative designs
+- **One-Click Theme Switching**: Change your entire site's look instantly
+- **Custom Color Schemes**: Advanced theming with CSS variables
+- **Layout Options**: Multiple blog layouts (grid, list, masonry, cards)
+
+#### AI-Powered Content Pipeline
+A complete end-to-end AI content generation system:
+
+1. **Research & Topic Discovery**
+   - AI-powered keyword research and trend analysis
+   - Competitor content analysis
+   - Content gap identification
+   - Topic clustering and content calendar suggestions
+
+2. **Content Generation**
+   - AI article drafting with your brand voice
+   - Automatic outline generation
+   - Multi-language content generation
+   - Tone and style customization
+
+3. **AI Image Generation**
+   - Automatic hero image generation for posts
+   - Custom illustrations and graphics
+   - Social media image variants (OG images, Twitter cards)
+   - Image optimization and alt text generation
+
+4. **SEO Analysis & Optimization**
+   - Real-time SEO scoring as you write
+   - Keyword density analysis
+   - Readability scoring
+   - Meta description optimization
+   - Internal linking suggestions
+   - Schema markup recommendations
+
+5. **One-Click Publishing**
+   - Review AI-generated content
+   - Make edits in the visual editor
+   - Auto-generate translations
+   - Schedule or publish instantly
+
+### Premium Admin Dashboard
+- **AI Writing Assistant**: Generate content directly in the editor
+- **Content Analytics**: Track post performance and engagement
+- **A/B Testing**: Test different headlines and images
+- **Bulk Operations**: Manage multiple posts at once
+- **Advanced Scheduling**: Content calendar with drag-and-drop
+
+### Who Is Premium For?
+- Content agencies managing multiple blogs
+- Businesses scaling content production
+- Professional bloggers and creators
+- Marketing teams needing consistent output
+- Anyone who wants to 10x their content creation
+
+
+## FAQ
 
 ### How do I change the admin password?
-Update the `ADMIN_PASSWORD` environment variable in your `.env` file or hosting platform settings.
+Update the `ADMIN_PASS` environment variable in your `.env` file or hosting platform settings.
 
 ### Can I use a different CMS?
 Yes! While this template has a built-in CMS, you can integrate any headless CMS (Sanity, Contentful, etc.) by modifying the data fetching functions in `src/lib/posts.ts`.
@@ -465,13 +481,10 @@ Yes! While this template has a built-in CMS, you can integrate any headless CMS 
 Yes! All content is stored as files (MDX for posts, JSON for settings). No database required.
 
 ### How do I add Google Analytics?
-Set the `PUBLIC_GA_MEASUREMENT_ID` environment variable with your Google Analytics measurement ID (e.g., `G-XXXXXXXXXX`).
+Set the `GA_MEASUREMENT_ID` in your site config JSON or as an environment variable.
 
 ### Can I customize the design?
 Absolutely! The template uses Tailwind CSS. Customize colors, fonts, and styles in `tailwind.config.mjs` and component files.
-
-### How do I add more languages?
-Edit `src/config/languages.ts` to add language definitions, then create translation files in `public/data/posts/[lang]/`.
 
 ### Is this SEO-friendly?
 Yes! Built-in SEO features include:
@@ -484,12 +497,12 @@ Yes! Built-in SEO features include:
 - Semantic HTML
 
 ### How do I deploy to production?
-See the [Deployment](#-deployment) section above. Most platforms (Vercel, Netlify) offer one-click deployment.
+See the [Deployment](#deployment) section above. Most platforms (Vercel, Netlify) offer one-click deployment.
 
 ### Can I monetize my blog?
 Yes! The template includes built-in blog CTA sections where you can add affiliate links, course promotions, or other monetization methods.
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
@@ -499,25 +512,25 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 💬 Support
+## Support
 
 - **Documentation**: [Astro Documentation](https://docs.astro.build)
 - **Issues**: [GitHub Issues](https://github.com/Apatero-Org/astro-seo-blog/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/Apatero-Org/astro-seo-blog/discussions)
 
-## ⭐ Show Your Support
+## Show Your Support
 
 If you find this template useful, please consider:
-- ⭐ **Starring the repository**
-- 🐛 **Reporting bugs or issues**
-- 💡 **Suggesting new features**
-- 🔀 **Contributing to the codebase**
+- Starring the repository
+- Reporting bugs or issues
+- Suggesting new features
+- Contributing to the codebase
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 Built with:
 - [Astro](https://astro.build) - The web framework for content-driven websites

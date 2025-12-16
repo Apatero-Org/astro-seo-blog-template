@@ -1,6 +1,5 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { getCollection } from 'astro:content';
 
 export interface Category {
   id: string;
@@ -12,6 +11,46 @@ export interface Tag {
   id: string;
   name: string;
   slug: string;
+}
+
+export interface ImageMetadata {
+  displayName?: string;
+  alt?: string;
+  title?: string;
+  caption?: string;
+  updatedAt?: string;
+}
+
+export interface ImagesMetadata {
+  images: Record<string, ImageMetadata>;
+}
+
+export interface SeoSettings {
+  sitemap: {
+    enabled?: boolean;
+    changefreq: string;
+    priority: number;
+  };
+  schema: {
+    enabled?: boolean;
+    organization?: boolean;
+    breadcrumbs?: boolean;
+    faq?: boolean;
+  };
+}
+
+export interface SiteConfig {
+  title: string;
+  description: string;
+  url: string;
+  author: string;
+  locale: string;
+  ogImage?: string;
+  social?: {
+    twitter?: string;
+    github?: string;
+    linkedin?: string;
+  };
 }
 
 /**
@@ -107,22 +146,22 @@ export async function getTags(): Promise<Tag[]> {
   }
 }
 
-export async function getImagesMetadata(): Promise<any> {
+export async function getImagesMetadata(): Promise<ImagesMetadata> {
   try {
     const metadataPath = path.join(process.cwd(), 'public', 'blog-images', 'metadata', 'images-metadata.json');
     const data = await fs.readFile(metadataPath, 'utf-8');
-    return JSON.parse(data);
+    return JSON.parse(data) as ImagesMetadata;
   } catch (e) {
     console.error('Error loading images metadata:', e);
     return { images: {} };
   }
 }
 
-export async function getSeoSettings(): Promise<any> {
+export async function getSeoSettings(): Promise<SeoSettings> {
   try {
     const seoPath = path.join(process.cwd(), 'public/data/settings/seo-settings.json');
     const data = await fs.readFile(seoPath, 'utf-8');
-    return JSON.parse(data);
+    return JSON.parse(data) as SeoSettings;
   } catch (e) {
     console.error('Error loading SEO settings:', e);
     return {
@@ -132,11 +171,11 @@ export async function getSeoSettings(): Promise<any> {
   }
 }
 
-export async function getSiteConfig(): Promise<any> {
+export async function getSiteConfig(): Promise<SiteConfig> {
   try {
     const configPath = path.join(process.cwd(), 'public/data/settings/site-config.json');
     const data = await fs.readFile(configPath, 'utf-8');
-    return JSON.parse(data);
+    return JSON.parse(data) as SiteConfig;
   } catch (e) {
     console.error('Error loading site config:', e);
     return {

@@ -1,9 +1,10 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { generateSessionToken, addSession, isValidSession } from '../../lib/session';
 
 // If already logged in, redirect to admin
 const sessionToken = Astro.cookies.get('admin-session');
-if (sessionToken?.value === 'authenticated') {
+if (isValidSession(sessionToken?.value)) {
   return Astro.redirect('/admin');
 }
 
@@ -12,21 +13,26 @@ if (Astro.request.method === 'POST') {
   const formData = await Astro.request.formData();
   const email = formData.get('email')?.toString();
   const password = formData.get('password')?.toString();
-  
-  const ADMIN_EMAIL = import.meta.env.ADMIN_EMAIL;
-  const ADMIN_PASS = import.meta.env.ADMIN_PASS;
-  
+
+  // Support both ADMIN_EMAIL/ADMIN_PASS and ADMIN_USERNAME/ADMIN_PASSWORD
+  const ADMIN_EMAIL = import.meta.env.ADMIN_EMAIL || process.env.ADMIN_EMAIL;
+  const ADMIN_PASS = import.meta.env.ADMIN_PASS || process.env.ADMIN_PASS;
+
   // If no credentials in env, deny access
   if (!ADMIN_EMAIL || !ADMIN_PASS) {
     error = 'Admin access not configured';
   } else if (email === ADMIN_EMAIL && password === ADMIN_PASS) {
-    // Set session cookie
-    Astro.cookies.set('admin-session', 'authenticated', {
+    // Generate secure session token
+    const token = generateSessionToken();
+    addSession(token);
+
+    // Set session cookie with secure token
+    Astro.cookies.set('admin-session', token, {
       path: '/',
       httpOnly: true,
-      secure: import.meta.env.PROD,
+      secure: true,
       sameSite: 'strict',
-      maxAge: 60 * 60 * 24 * 7 // 7 days
+      maxAge: 60 * 60 * 24 // 24 hours
     });
     return Astro.redirect('/admin');
   } else {

@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { getPublishedBlogPosts } from '../lib/posts';
 import { getCategories } from '../lib/data';
-import { normalizeTagName } from '../lib/tags';
+import { normalizeTagName } from '../lib/utils';
 import { SITE_CONFIG } from '../data/site-config';
 import { SUPPORTED_LANGUAGES, DEFAULT_LANGUAGE, getLanguagePrefix } from '../config/languages';
 

@@ -74,7 +74,7 @@ const isBlogPage = Astro.url.pathname.includes('/blog') || Astro.url.pathname.st
 ---
 
 <!DOCTYPE html>
-<html lang={SITE_CONFIG.locale} class="scroll-smooth">
+<html lang={currentLanguage || SITE_CONFIG.locale.split('_')[0]} class="scroll-smooth">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />

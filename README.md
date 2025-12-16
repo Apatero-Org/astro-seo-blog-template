@@ -80,8 +80,8 @@ A modern, feature-rich, and SEO-optimized blog template built with [Astro](https
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/Apatero-Org/astro-seo-blog.git
-   cd astro-seo-blog
+   git clone https://github.com/Apatero-Org/astro-seo-blog-template.git
+   cd astro-seo-blog-template
    ```
 
 2. **Install dependencies**
@@ -517,8 +517,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Support
 
 - **Documentation**: [Astro Documentation](https://docs.astro.build)
-- **Issues**: [GitHub Issues](https://github.com/Apatero-Org/astro-seo-blog/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/Apatero-Org/astro-seo-blog/discussions)
+- **Issues**: [GitHub Issues](https://github.com/Apatero-Org/astro-seo-blog-template/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/Apatero-Org/astro-seo-blog-template/discussions)
 
 ## Show Your Support
 
